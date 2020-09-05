@@ -1,13 +1,8 @@
 ## Configure file
 
-#### Directory tree
+#### TuXiv Directory tree
 
-~~~
-TuXiv conf
-- model conf (cmd.yaml)
-- conda conf (conf.yaml)
-- slurm conf (slurm.conf)
-~~~
+<img src="/Users/zhangcengguang/Library/Application Support/typora-user-images/image-20200905105043809.png" alt="image-20200905105043809" style="zoom:40%;" />
 
 #### Model configuration
 
