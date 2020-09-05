@@ -2,7 +2,19 @@
 
 #### TuXiv Directory tree
 
-<img src="./TuXiv dir tree.png" alt="TuXiv dir tree" style="zoom:20%;" />
+~~~shell
+TuXiv\ example
+    ├── data
+    │   └── example.data
+    ├── dep
+    │   └── example.dep
+    ├── doc
+    │   └── example.pdf
+    └── src
+        ├── TuXiv_conf.yaml
+        └── code
+            └── TuXiv_example.py
+~~~
 
 #### Model configuration
 
