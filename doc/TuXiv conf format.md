@@ -2,7 +2,7 @@
 
 #### TuXiv Directory tree
 
-<img src="./TuXiv dir tree.png" alt="TuXiv dir tree" style="zoom:40%;" />
+<img src="./TuXiv dir tree.png" alt="TuXiv dir tree" style="zoom:20%;" />
 
 #### Model configuration
 
