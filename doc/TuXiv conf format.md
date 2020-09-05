@@ -2,7 +2,7 @@
 
 #### TuXiv Directory tree
 
-<img src="/Users/zhangcengguang/Library/Application Support/typora-user-images/image-20200905105043809.png" alt="image-20200905105043809" style="zoom:40%;" />
+<img src="./TuXiv dir tree.png" alt="TuXiv dir tree" style="zoom:40%;" />
 
 #### Model configuration
 
