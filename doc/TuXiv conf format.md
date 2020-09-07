@@ -4,16 +4,24 @@
 
 ~~~shell
 TuXiv\ example
-    ├── data
-    │   └── example.data
+    ├── TuXiv_conf.yaml
+    ├── conf
+    │   ├── conda.yaml
+    │   └── slurm.conf
+    ├── datasets
+    │   ├── imagenet
+    │   │   └── imagenet.data
+    │   ├── manifest.json
+    │   └── mnist
+    │       └── mnist.data
     ├── dep
     │   └── example.dep
     ├── doc
     │   └── example.pdf
     └── src
-        ├── TuXiv_conf.yaml
-        └── code
-            └── TuXiv_example.py
+        ├── code
+        │   └── TuXiv_example.py
+        └── start_scripts.sh
 ~~~
 
 #### Model configuration
