@@ -1,0 +1,142 @@
+package cmd
+
+import (
+	"fmt"
+	"github.com/spf13/cobra"
+	yaml "gopkg.in/yaml.v2"
+	"io/ioutil"
+	"log"
+	"os"
+	"reflect"
+)
+
+type Config struct {
+	Entrypoint  []string
+	Environment struct {
+		Name       string
+		Dependency []string
+	}
+	Job struct {
+		General []string
+		Module  []string
+		Env     []string
+	}
+	Datasets []struct {
+		Name string
+		Url  string
+	}
+}
+
+func init() {
+	rootCmd.AddCommand(buildCmd)
+}
+
+var buildCmd = &cobra.Command{
+	Use:   "build",
+	Short: "Setup conda environment",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("tcloud build CLI")
+		err := ParseTuxivConf(args)
+		if err {
+			fmt.Println("Parse tuxiv config file failed.")
+			log.Fatal(err)
+		}
+	},
+}
+
+func ParseTuxivConf(args []string) bool {
+	// Check tuxiv.conf
+	tuxivFile := "tuxiv.conf"
+	if len(args) > 0 {
+		tuxivFile = args[0]
+	}
+
+	yamlFile, err := ioutil.ReadFile(tuxivFile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var setting Config
+	// resultMap := make(map[string]interface{})
+	err = yaml.Unmarshal(yamlFile, &setting)
+
+	// Start parsing to 3 files
+	conf_dir := "configurations"
+	if _, err := os.Stat(conf_dir); os.IsNotExist(err) {
+		os.Mkdir(conf_dir, 0755)
+	}
+	err1 := MapToYAML("environment", "conda.yaml", resultMap)
+	err2 := MapToYAML("job", "run.slurm", resultMap)
+	err3 := MapToYAML("datasets", "citynet.sh", resultMap)
+	if err1 || err2 || err3 {
+		if err1 {
+			fmt.Println("Environment config file generate failed.")
+			log.Fatal(err1)
+		}
+		if err2 {
+			fmt.Println("Slurm config file generate failed.")
+			log.Fatal(err2)
+		}
+		if err2 {
+			fmt.Println("Datasets config file generate failed.")
+			log.Fatal(err1)
+		}
+	}
+	return err1 || err2 || err3
+}
+
+func MapToYAML(in string, out string, resultMap map[string]interface{}) bool {
+	// Switch map to output file
+	var in_map = resultMap[in].(map[string]interface{})
+	// if in_map.Kind() == reflect.Map { // map[]interface{}
+	if Check_Map(in_map) {
+		content := ""
+		MapToContent(in_map, &content)
+		// for k, v := range in_map {
+		// 	if v.Kind() == reflect.Slice {
+		// 		content = content + k + ":\n"
+		// 		for i, s := range v {
+		// 			content = content + "\t- " + s + "\n"
+		// 		}
+		// 	}
+		// 	else {
+		// 		content = content + k + ": " + v + "\n"
+		// 	}
+		// }
+		fmt.Printf(content)
+	} else {
+		for i, s := range in_map {
+			// if s.Kind() == reflect.Map {
+			if Check_Map(s.(map[string]interface{})) {
+				content := ""
+				MapToContent(s.(map[string]interface{}), &content)
+				fmt.Printf(content)
+			}
+		}
+	}
+	return false
+}
+
+func MapToContent(in map[string]interface{}, content *string) string {
+	for k, v := range in {
+		if v.Kind() == reflect.Slice {
+			*content = *content + k + ":\n"
+			for i, s := range v {
+				*content = *content + "\t- " + s + "\n"
+			}
+		} else {
+			*content = *content + k + ": " + v + "\n"
+		}
+	}
+	return *content
+}
+
+func Check_Map(in map[string]interface{}) bool {
+	switch value := in.(type) {
+	// case []string:
+	// 	return IsSlice
+	case map[string]interface{}:
+		return true
+	default:
+		return false
+	}
+}
