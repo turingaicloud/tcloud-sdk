@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/spf13/cobra"
 	yaml "gopkg.in/yaml.v2"
@@ -12,10 +13,11 @@ import (
 type Config struct {
 	Entrypoint  []string
 	Environment struct {
-		Name       string
-		Dependency []string
+		Name         string
+		Dependencies []string
 	}
 	Job struct {
+		Name    string
 		General []string
 		Module  []string
 		Env     []string
@@ -57,15 +59,14 @@ func ParseTuxivConf(args []string) bool {
 	var setting Config
 	// resultMap := make(map[string]interface{})
 	err = yaml.Unmarshal(yamlFile, &setting)
-	fmt.Println(setting)
 	// Start parsing to 3 files
 	conf_dir := "configurations"
 	if _, err := os.Stat(conf_dir); os.IsNotExist(err) {
 		os.Mkdir(conf_dir, 0755)
 	}
-	err1 := CondaFile(setting)
-	err2 := SlurmFile(setting)
-	err3 := CityFile(setting)
+	err1 := CondaFile(setting, conf_dir)
+	err2 := SlurmFile(setting, conf_dir)
+	err3 := CityFile(setting, conf_dir)
 	if err1 || err2 || err3 {
 		if err1 {
 			fmt.Println("Environment config file generate failed.")
@@ -83,20 +84,75 @@ func ParseTuxivConf(args []string) bool {
 	return err1 || err2 || err3
 }
 
-func CondaFile(setting Config) bool {
-	// Switch map to output file
+func CondaFile(setting Config, conf_dir string) bool {
+	f, err := os.Create(conf_dir + "/conda.yaml")
+	if err != nil {
+		fmt.Println("Create Conda config file failed.")
+		log.Fatal(err)
+		return true
+	}
+	defer f.Close()
 
+	w := bufio.NewWriter(f)
+	// Conda file
+	fmt.Fprintln(w, fmt.Sprintf("name: %s", setting.Environment.Name))
+	// Dependencies
+	fmt.Fprintln(w, "dependencies:")
+	for _, s := range setting.Environment.Dependencies {
+		str := fmt.Sprintf("\t- %s", s)
+		fmt.Fprintln(w, str)
+	}
+	w.Flush()
 	return false
 }
 
-func SlurmFile(setting Config) bool {
-	// Switch map to output file
+func SlurmFile(setting Config, conf_dir string) bool {
+	f, err := os.Create(conf_dir + "/run.slurm")
+	if err != nil {
+		fmt.Println("Create Slurm config file failed.")
+		log.Fatal(err)
+		return true
+	}
+	defer f.Close()
 
+	w := bufio.NewWriter(f)
+	// Slurm file
+	fmt.Fprintln(w, "#!/bin/bash")
+	// SBATCH
+	for _, s := range setting.Job.General {
+		str := fmt.Sprintf("#SBATCH --%s", s)
+		fmt.Fprintln(w, str)
+	}
+	// Module
+	for _, s := range setting.Job.Module {
+		str := fmt.Sprintf("module load %s", s)
+		fmt.Fprintln(w, str)
+	}
+	// Env
+	for _, s := range setting.Job.Env {
+		str := fmt.Sprintf("export %s", s)
+		fmt.Fprintln(w, str)
+	}
+	w.Flush()
 	return false
 }
 
-func CityFile(setting Config) bool {
-	// Switch map to output file
+func CityFile(setting Config, conf_dir string) bool {
+	f, err := os.Create(conf_dir + "/citynet.sh")
+	if err != nil {
+		fmt.Println("Create Datasets config file failed.")
+		log.Fatal(err)
+		return true
+	}
+	defer f.Close()
 
+	w := bufio.NewWriter(f)
+	// CityNet file
+	// Not yet clear about the file format
+	for _, s := range setting.Datasets {
+		str := fmt.Sprintf("\n%s\n%s\n", s.Name, s.Url)
+		fmt.Fprintln(w, str)
+	}
+	w.Flush()
 	return false
 }
