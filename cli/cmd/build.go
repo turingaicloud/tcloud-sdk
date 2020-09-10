@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+        "os/exec"
 )
 
 type Config struct {
@@ -42,9 +43,23 @@ var buildCmd = &cobra.Command{
 			fmt.Println("Parse tuxiv config file failed.")
 			log.Fatal(err)
 		}
+                err_ := CondaCreate()
+                if err_ {
+                        fmt.Println("Create conda failed")
+                        log.Fatal(err_)
+		}
 	},
 }
-
+func CondaCreate() bool {
+    cmd := exec.Command("conda", "env", "create", "-f", "configurations/conda.yaml")
+    out, err := cmd.CombinedOutput()
+    if err != nil {
+        log.Fatalf("cmd.Run() failed with %s\n", err)
+        return true
+    }
+    fmt.Printf("combined out:\n%s\n", string(out))
+    return false
+}
 func ParseTuxivConf(args []string) bool {
 	// Check tuxiv.conf
 	tuxivFile := "tuxiv.conf"
@@ -96,12 +111,16 @@ func CondaFile(setting Config, conf_dir string) bool {
 	w := bufio.NewWriter(f)
 	// Conda file
 	fmt.Fprintln(w, fmt.Sprintf("name: %s", setting.Environment.Name))
+        // Channels
+        fmt.Fprintln(w, fmt.Sprintf("channels:\n  - defaults"))
 	// Dependencies
 	fmt.Fprintln(w, "dependencies:")
 	for _, s := range setting.Environment.Dependencies {
-		str := fmt.Sprintf("\t- %s", s)
+		str := fmt.Sprintf("  - %s", s)
 		fmt.Fprintln(w, str)
 	}
+        // Prefix
+        fmt.Fprintln(w, fmt.Sprint("prefix: ../environment"))
 	w.Flush()
 	return false
 }
