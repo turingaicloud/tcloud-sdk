@@ -38,15 +38,20 @@ var buildCmd = &cobra.Command{
 	Short: "Setup conda environment",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("tcloud build CLI")
-		err := ParseTuxivConf(args)
+		setting, err := ParseTuxivConf(args)
 		if err {
 			fmt.Println("Parse tuxiv config file failed.")
 			log.Fatal(err)
 		}
-                err_ := CondaCreate()
-                if err_ {
-                        fmt.Println("Create conda failed")
-                        log.Fatal(err_)
+                err_1 := CondaRemove(setting.Environment.Name)
+                if err_1 {
+                        fmt.Println("remove conda env failed")
+                        log.Fatal(err_1)
+                }
+                err_2 := CondaCreate()
+                if err_2 {
+                        fmt.Println("Create conda env failed")
+                        log.Fatal(err_2)
 		}
 	},
 }
@@ -57,10 +62,20 @@ func CondaCreate() bool {
         log.Fatalf("cmd.Run() failed with %s\n", err)
         return true
     }
-    fmt.Printf("combined out:\n%s\n", string(out))
+    fmt.Printf("conda create out:\n%s\n", string(out))
     return false
 }
-func ParseTuxivConf(args []string) bool {
+func CondaRemove(name string) bool {
+    cmd := exec.Command("conda", "remove", "-n", name, "--all", "-y")
+    out, err := cmd.CombinedOutput()
+    if err != nil {
+        log.Fatalf("cmd.Run() failed with %s\n", err)
+        return true
+    }
+    fmt.Printf("conda remove out:\n%s\n", string(out))
+    return false
+}
+func ParseTuxivConf(args []string) (Config, bool) {
 	// Check tuxiv.conf
 	tuxivFile := "tuxiv.conf"
 	if len(args) > 0 {
@@ -96,7 +111,7 @@ func ParseTuxivConf(args []string) bool {
 			log.Fatal(err1)
 		}
 	}
-	return err1 || err2 || err3
+	return setting, err1 || err2 || err3
 }
 
 func CondaFile(setting Config, conf_dir string) bool {
