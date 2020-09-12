@@ -8,7 +8,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-        "os/exec"
+	"os/exec"
+	"tcloud-sdk/cli/tcloudcli"
 )
 
 type Config struct {
@@ -29,51 +30,50 @@ type Config struct {
 	}
 }
 
-func init() {
-	rootCmd.AddCommand(buildCmd)
+func NewBuildCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
+	return &cobra.Command{
+		Use:   "build",
+		Short: "Parse tuxiv.confg and Setup conda environment",
+		Run: func(cmd *cobra.Command, args []string) {
+			// fmt.Println("tcloud build CLI")
+			setting, err := ParseTuxivConf(args)
+			if err {
+				fmt.Println("Parse tuxiv config file failed.")
+				log.Fatal(err)
+			}
+			err_1 := CondaRemove(setting.Environment.Name)
+			if err_1 {
+				fmt.Println("remove conda env failed")
+				log.Fatal(err_1)
+			}
+			err_2 := CondaCreate()
+			if err_2 {
+				fmt.Println("Create conda env failed")
+				log.Fatal(err_2)
+			}
+		},
+	}
 }
 
-var buildCmd = &cobra.Command{
-	Use:   "build",
-	Short: "Setup conda environment",
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("tcloud build CLI")
-		setting, err := ParseTuxivConf(args)
-		if err {
-			fmt.Println("Parse tuxiv config file failed.")
-			log.Fatal(err)
-		}
-                err_1 := CondaRemove(setting.Environment.Name)
-                if err_1 {
-                        fmt.Println("remove conda env failed")
-                        log.Fatal(err_1)
-                }
-                err_2 := CondaCreate()
-                if err_2 {
-                        fmt.Println("Create conda env failed")
-                        log.Fatal(err_2)
-		}
-	},
-}
 func CondaCreate() bool {
-    cmd := exec.Command("conda", "env", "create", "-f", "configurations/conda.yaml")
-    out, err := cmd.CombinedOutput()
-    if err != nil {
-        log.Fatalf("cmd.Run() failed with %s\n", err)
-        return true
-    }
-    fmt.Printf("conda create out:\n%s\n", string(out))
-    return false
+	cmd := exec.Command("conda", "env", "create", "-f", "configurations/conda.yaml")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Fatalf("cmd.Run() failed with %s\n", err)
+		return true
+	}
+	fmt.Printf("conda create out:\n%s\n", string(out))
+	return false
 }
 func CondaRemove(name string) bool {
-    cmd := exec.Command("conda", "remove", "-n", name, "--all", "-y")
-    out, err := cmd.CombinedOutput()
-    if err != nil {
-        log.Fatalf("cmd.Run() failed with %s\n", err)
-        return true
-    }
-    fmt.Printf("conda remove out:\n%s\n", string(out))
-    return false
+	cmd := exec.Command("conda", "remove", "-n", name, "--all", "-y")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Fatalf("cmd.Run() failed with %s\n", err)
+		return true
+	}
+	fmt.Printf("conda remove out:\n%s\n", string(out))
+	return false
 }
 func ParseTuxivConf(args []string) (Config, bool) {
 	// Check tuxiv.conf
@@ -126,16 +126,16 @@ func CondaFile(setting Config, conf_dir string) bool {
 	w := bufio.NewWriter(f)
 	// Conda file
 	fmt.Fprintln(w, fmt.Sprintf("name: %s", setting.Environment.Name))
-        // Channels
-        fmt.Fprintln(w, fmt.Sprintf("channels:\n  - defaults"))
+	// Channels
+	fmt.Fprintln(w, fmt.Sprintf("channels:\n  - defaults"))
 	// Dependencies
 	fmt.Fprintln(w, "dependencies:")
 	for _, s := range setting.Environment.Dependencies {
 		str := fmt.Sprintf("  - %s", s)
 		fmt.Fprintln(w, str)
 	}
-        // Prefix
-        fmt.Fprintln(w, fmt.Sprint("prefix: ../environment"))
+	// Prefix
+	fmt.Fprintln(w, fmt.Sprint("prefix: ../environment"))
 	w.Flush()
 	return false
 }
