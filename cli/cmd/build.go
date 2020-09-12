@@ -41,6 +41,11 @@ func NewBuildCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 				fmt.Println("Parse tuxiv config file failed.")
 				log.Fatal(err)
 			}
+			err_0 := UploadFile()
+			if err_0 {
+				fmt.Println("Upload file env failed")
+				log.Fatal(err_0)
+			}
 			err_1 := CondaRemove(setting.Environment.Name)
 			if err_1 {
 				fmt.Println("remove conda env failed")
@@ -54,9 +59,19 @@ func NewBuildCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 		},
 	}
 }
-
+func UploadFile() bool {
+	cmd := exec.Command("scp", "-r", "-i", "./TACC.pem", "../tcloud_job", "ubuntu@18.162.45.250:/home/ubuntu")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Fatalf("cmd.Run() failed with %s\n", err)
+		return true
+	}
+	fmt.Printf("Upload file out:\n%s\n", string(out))
+	return false
+}
 func CondaCreate() bool {
-	cmd := exec.Command("conda", "env", "create", "-f", "configurations/conda.yaml")
+	bash_command := "/home/ubuntu/miniconda3/bin/conda env create -f /home/ubuntu/tcloud_job/configurations/conda.yaml"
+    cmd := exec.Command("ssh", "-i", "./TACC.pem", "ubuntu@18.162.45.250", bash_command)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Fatalf("cmd.Run() failed with %s\n", err)
@@ -66,7 +81,8 @@ func CondaCreate() bool {
 	return false
 }
 func CondaRemove(name string) bool {
-	cmd := exec.Command("conda", "remove", "-n", name, "--all", "-y")
+	bash_command := "/home/ubuntu/miniconda3/bin/conda remove -n " + name + " --all -y"
+    cmd := exec.Command("ssh", "-i", "./TACC.pem", "ubuntu@18.162.45.250", bash_command)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Fatalf("cmd.Run() failed with %s\n", err)
