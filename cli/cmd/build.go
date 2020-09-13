@@ -87,7 +87,7 @@ func UploadFile() bool {
 }
 func CondaCreate() bool {
 	bash_command := "ssh TACC1 /home/ubuntu/miniconda3/bin/conda env create -f /home/ubuntu/tcloud_job/configurations/conda.yaml"
-    cmd := exec.Command("ssh", "-i", "./TACC.pem", "ubuntu@18.162.45.250", bash_command)
+	cmd := exec.Command("ssh", "-i", "./TACC.pem", "ubuntu@18.162.45.250", bash_command)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Fatalf("cmd.Run() failed with %s\n", err)
@@ -95,7 +95,7 @@ func CondaCreate() bool {
 	}
 	fmt.Printf("conda create on TACC1 out:\n%s\n", string(out))
 	bash_command = "ssh TACC2 /home/ubuntu/miniconda3/bin/conda env create -f /home/ubuntu/tcloud_job/configurations/conda.yaml"
-    cmd = exec.Command("ssh", "-i", "./TACC.pem", "ubuntu@18.162.45.250", bash_command)
+	cmd = exec.Command("ssh", "-i", "./TACC.pem", "ubuntu@18.162.45.250", bash_command)
 	out, err = cmd.CombinedOutput()
 	if err != nil {
 		log.Fatalf("cmd.Run() failed with %s\n", err)
@@ -106,7 +106,7 @@ func CondaCreate() bool {
 }
 func CondaRemove(name string) bool {
 	bash_command := "ssh TACC1 /home/ubuntu/miniconda3/bin/conda remove -n " + name + " --all -y"
-    cmd := exec.Command("ssh", "-i", "./TACC.pem", "ubuntu@18.162.45.250", bash_command)
+	cmd := exec.Command("ssh", "-i", "./TACC.pem", "ubuntu@18.162.45.250", bash_command)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Fatalf("cmd.Run() failed with %s\n", err)
@@ -114,7 +114,7 @@ func CondaRemove(name string) bool {
 	}
 	fmt.Printf("conda remove on TACC1 out:\n%s\n", string(out))
 	bash_command = "ssh TACC2 /home/ubuntu/miniconda3/bin/conda remove -n " + name + " --all -y"
-    cmd = exec.Command("ssh", "-i", "./TACC.pem", "ubuntu@18.162.45.250", bash_command)
+	cmd = exec.Command("ssh", "-i", "./TACC.pem", "ubuntu@18.162.45.250", bash_command)
 	out, err = cmd.CombinedOutput()
 	if err != nil {
 		log.Fatalf("cmd.Run() failed with %s\n", err)
@@ -145,7 +145,11 @@ func ParseTuxivConf(args []string) (Config, bool) {
 	err1 := CondaFile(setting, conf_dir)
 	err2 := SlurmFile(setting, conf_dir)
 	err3 := CityFile(setting, conf_dir)
-	err4 := GOSH(setting)
+	err4 := GoshFile(setting)
+	err5 := os.Chmod("go.sh", 0755)
+	if err5 != nil {
+		log.Println(err5)
+	}
 	if err1 || err2 || err3 || err4 {
 		if err1 {
 			fmt.Println("Environment config file generate failed.")
@@ -166,8 +170,8 @@ func ParseTuxivConf(args []string) (Config, bool) {
 	}
 	return setting, err1 || err2 || err3 || err4
 }
-func GOSH(setting Config) bool {
-    f, err := os.Create("./go.sh")
+func GoshFile(setting Config) bool {
+	f, err := os.Create("./go.sh")
 	if err != nil {
 		fmt.Println("Create go.sh file failed.")
 		log.Fatal(err)
@@ -181,8 +185,8 @@ func GOSH(setting Config) bool {
 		str := fmt.Sprintf("%s \\", s)
 		fmt.Fprintln(w, str)
 	}
-    w.Flush()
-    return false
+	w.Flush()
+	return false
 }
 func CondaFile(setting Config, conf_dir string) bool {
 	f, err := os.Create(conf_dir + "/conda.yaml")
@@ -237,6 +241,8 @@ func SlurmFile(setting Config, conf_dir string) bool {
 		str := fmt.Sprintf("export %s", s)
 		fmt.Fprintln(w, str)
 	}
+	str := fmt.Sprintf("srun -N2 ../go.sh")
+	fmt.Fprintln(w, str)
 	w.Flush()
 	return false
 }
