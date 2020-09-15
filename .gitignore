@@ -2,8 +2,7 @@
 *.DS_Store
 .DS_Store?
 *.vscode
-node_modules/
-.eslintrc.json
+*.tcloud
 package.json
 package-lock.json
 vendor/

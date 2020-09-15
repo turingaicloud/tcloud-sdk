@@ -5,7 +5,6 @@ package tcloudcli
 // 	"os"
 // )
 
-// TODO(Add more attributes)
 type TcloudCli struct {
 	userConfig *UserConfig
 }

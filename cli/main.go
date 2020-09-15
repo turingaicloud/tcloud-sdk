@@ -12,7 +12,7 @@ import (
 
 func main() {
 	home := homeDIR()
-	userConfig := tcloudcli.NewUserConfig("ubuntu", filepath.Join(home, ".ssh/id_rsa"))
+	userConfig := tcloudcli.NewUserConfig(filepath.Join(home, ".tcloud", "user.json"), filepath.Join(home, ".tcloud", "TACC.pem"))
 	cli := tcloudcli.NewTcloudCli(userConfig)
 	tcloudCmd := newTcloudCommand(cli)
 	if err := tcloudCmd.Execute(); err != nil {

@@ -1,19 +1,30 @@
 package tcloudcli
 
-// import (
-// 	"encoding/json"
-// 	"os"
-// )
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+)
 
 type UserConfig struct {
-	// Slurm config
+	userName string `json:"username"`
+	path     string
 	authFile string
-	userName string
 }
 
-func NewUserConfig(userName string, authFile string) *UserConfig {
+func NewUserConfig(path string, authFile string) *UserConfig {
 	var config UserConfig
+	file, err := os.Open(path)
+	if err != nil {
+		return &UserConfig{path: path, authFile: authFile}
+	}
+	decoder := json.NewDecoder(file)
+	if err = decoder.Decode(&config); err != nil {
+		return &UserConfig{path: path, authFile: authFile}
+	}
+	fmt.Println("Hi ", config.userName, " End")
+
+	config.path = path
 	config.authFile = authFile
-	config.userName = userName
 	return &config
 }
