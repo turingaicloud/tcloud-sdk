@@ -7,7 +7,7 @@ import (
 )
 
 type UserConfig struct {
-	userName string `json:"username"`
+	UserName string `json:"username"`
 	path     string
 	authFile string
 }
@@ -22,7 +22,6 @@ func NewUserConfig(path string, authFile string) *UserConfig {
 	if err = decoder.Decode(&config); err != nil {
 		return &UserConfig{path: path, authFile: authFile}
 	}
-	fmt.Println("Hi ", config.userName, " End")
 
 	config.path = path
 	config.authFile = authFile
