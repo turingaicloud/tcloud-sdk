@@ -32,8 +32,5 @@ func newTcloudCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 }
 
 func homeDIR() string {
-	// if runtime.GOOS == "windows" {
-	// 	return os.Getenv("userprofile")
-	// }
 	return os.Getenv("HOME")
 }

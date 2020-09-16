@@ -2,12 +2,12 @@ package tcloudcli
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 )
 
 type UserConfig struct {
-	UserName string `json:"username"`
+	UserName string   `json:"username"`
+	SSHlist  []string `json:"ssh"`
 	path     string
 	authFile string
 }
