@@ -26,4 +26,5 @@ clean :
 		rm -rf bin
 		rm -f ${GOPATH}/bin/tcloud
 		rm -rf configurations
+		rm -f run.sh
 		rm -rf ${GOPATH}/src/tcloud-sdk/examples/TuXiv_example/configurations
