@@ -1,7 +1,0 @@
-name: test
-channels:
-  - defaults
-dependencies:
-  - vc=14=h0510ff6_3
-  - vs2015_runtime=14.0.25123=3
-prefix: ../environment

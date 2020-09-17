@@ -7,7 +7,7 @@ import (
 
 type UserConfig struct {
 	UserName string   `json:"username"`
-	SSHpath  []string `json:"ssh"`
+	SSHpath  []string `json:"sshpath"`
 	path     string
 	authFile string
 }

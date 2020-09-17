@@ -25,3 +25,5 @@ install : ${INSTALL_BIN}
 clean :
 		rm -rf bin
 		rm -f ${GOPATH}/bin/tcloud
+		rm -rf configurations
+		rm -rf ${GOPATH}/src/tcloud-sdk/examples/TuXiv_example/configurations

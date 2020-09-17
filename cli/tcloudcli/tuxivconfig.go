@@ -1,10 +1,15 @@
 package tcloudcli
 
 import (
+	"bufio"
+	"fmt"
 	yaml "gopkg.in/yaml.v2"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 )
 
 type TuxivConfig struct {
@@ -26,50 +31,68 @@ type TuxivConfig struct {
 	}
 }
 
-func (config *TuxivConfig) ParseTuxivConf(args []string) (string, bool) {
+func (config *TuxivConfig) TACCJobEnv(remoteWorkDir string) []string {
+	var strlist []string
+	// TACC Global Env
+	strlist = append(strlist, fmt.Sprintf("TACC_WORKDIR=%s", remoteWorkDir))
+	return strlist
+}
+
+func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, args []string) (string, string, bool) {
 	var tuxivFile string
-	var confDir string
-	var workDir string
+	var localConfDir, localWorkDir string
+	var remoteWorkDir string
+	// var remoteConfDir string
+	var repoName string
 	if len(args) < 1 {
 		tuxivFile = "tuxiv.conf"
-		workDir = "."
-		confDir = "./configurations"
+		localWorkDir, _ = filepath.Abs(path.Dir(tuxivFile))
+		localConfDir = filepath.Join(localWorkDir, "configurations")
+		dirlist := strings.Split(localWorkDir, "/")
+		repoName = dirlist[len(dirlist)-1]
+		remoteWorkDir = fmt.Sprintf("/home/%s/%s", tcloudcli.userConfig.UserName, repoName)
+		// remoteConfDir = filepath.Join(remoteWorkDir, "configurations")
 	} else {
 		tuxivFile = args[0]
-		workDir = path.Dir(tuxivFile)
-		confDir = filepath.Join(confDir, "configurations")
+		localWorkDir, _ = filepath.Abs(path.Dir(tuxivFile))
+		localConfDir = filepath.Join(localWorkDir, "configurations")
+		dirlist := strings.Split(localWorkDir, "/")
+		repoName = dirlist[len(dirlist)-1]
+		remoteWorkDir = fmt.Sprintf("/home/%s/%s", tcloudcli.userConfig.UserName, repoName)
+		// remoteConfDir = filepath.Join(remoteWorkDir, "configurations")
 	}
 
 	yamlFile, err := ioutil.ReadFile(tuxivFile)
 	if err != nil {
-		return workDir, true
+		return localWorkDir, repoName, true
 	}
 
-	err = yaml.Unmarshal(yamlFile, &config)
-	if _, err = os.Stat(confDir); os.IsNotExist(err) {
-		os.Mkdir(confDir, 0755)
+	err = yaml.Unmarshal(yamlFile, config)
+	if _, err = os.Stat(localConfDir); os.IsNotExist(err) {
+		os.Mkdir(localConfDir, 0755)
 	}
-	if err = config.CondaFile(workDir, confDir); err == true {
+
+	if err := config.CondaFile(localConfDir, remoteWorkDir); err == true {
 		fmt.Println("Environment config file generate failed.")
-		return workDir, true
+		return localWorkDir, repoName, true
 	}
-	if err = config.SlurmFile(workDir, confDir); err == true {
+	if err := config.SlurmFile(localConfDir, remoteWorkDir); err == true {
 		fmt.Println("Slurm config file generate failed.")
-		return workDir, true
+		return localWorkDir, repoName, true
 	}
-	if err = config.CityFile(confDir); err == true {
+	if err := config.CityFile(localConfDir); err == true {
 		fmt.Println("Datasets config file generate failed.")
-		return workDir, true
+		return localWorkDir, repoName, true
 	}
-	if err = config.RunshFile(workDir); err == true {
+	if err := config.RunshFile(tcloudcli, localWorkDir); err == true {
 		fmt.Println("Run.sh exec file generate failed.")
-		return workDir, true
+		return localWorkDir, repoName, true
 	}
-	return workDir, false
+	return localWorkDir, repoName, false
 }
 
-func (config *TuxivConfig) CondaFile(workDir string, confDir string) bool {
-	f, err := os.Create(filepath.Join(confDir, "conda.yaml"))
+func (config *TuxivConfig) CondaFile(localConfDir string, remoteWorkDir string) bool {
+	f, err := os.Create(filepath.Join(localConfDir, "conda.yaml"))
 	if err != nil {
 		fmt.Println("Create Conda config file failed.")
 		return true
@@ -92,13 +115,13 @@ func (config *TuxivConfig) CondaFile(workDir string, confDir string) bool {
 		fmt.Fprintln(w, str)
 	}
 	// prefix - set to ${workDir}/environment
-	fmt.Fprintln(w, fmt.Sprintf("prefix: %s", filepath.Join(workDir, "environment")))
+	fmt.Fprintln(w, fmt.Sprintf("prefix: %s", filepath.Join(remoteWorkDir, "environment")))
 	w.Flush()
 	return false
 }
 
-func (config *TuxivConfig) SlurmFile(workDir string, confDir string) bool {
-	f, err := os.Create(filepath.Join(confDir, "run.slurm"))
+func (config *TuxivConfig) SlurmFile(localConfDir string, remoteWorkDir string) bool {
+	f, err := os.Create(filepath.Join(localConfDir, "run.slurm"))
 	if err != nil {
 		fmt.Println("Create Slurm config file failed.")
 		log.Fatal(err)
@@ -124,14 +147,20 @@ func (config *TuxivConfig) SlurmFile(workDir string, confDir string) bool {
 		str := fmt.Sprintf("export %s", s)
 		fmt.Fprintln(w, str)
 	}
-	str := fmt.Sprintf("srun %s", filepath(workDir, "run.sh"))
+
+	// TACC Env
+	for _, s := range config.TACCJobEnv(remoteWorkDir) {
+		str := fmt.Sprintf("export %s", s)
+		fmt.Fprintln(w, str)
+	}
+	str := fmt.Sprintf("srun %s", filepath.Join(remoteWorkDir, "run.sh"))
 	fmt.Fprintln(w, str)
 	w.Flush()
 	return false
 }
 
-func (config *TuxivConfig) CityFile(confDir string) bool {
-	f, err := os.Create(filepath.Join(confDir, "citynet.sh"))
+func (config *TuxivConfig) CityFile(localConfDir string) bool {
+	f, err := os.Create(filepath.Join(localConfDir, "citynet.sh"))
 	if err != nil {
 		fmt.Println("Create Datasets config file failed.")
 		return true
@@ -148,8 +177,8 @@ func (config *TuxivConfig) CityFile(confDir string) bool {
 	return false
 }
 
-func (config *TuxivConfig) RunshFile(workDir string) bool {
-	f, err := os.Create(filepath.Join(workDir, "run.sh"))
+func (config *TuxivConfig) RunshFile(tcloudcli *TcloudCli, localWorkDir string) bool {
+	f, err := os.Create(filepath.Join(localWorkDir, "run.sh"))
 	if err != nil {
 		fmt.Println("Create run.sh file failed.")
 		return true
@@ -157,8 +186,10 @@ func (config *TuxivConfig) RunshFile(workDir string) bool {
 	defer f.Close()
 
 	w := bufio.NewWriter(f)
-	fmt.Fprintln(w, "#!/bin/bash\nsource ~/miniconda3/etc/profile.d/conda.sh")
-	str := fmt.Sprintf("conda activate %s\n", config.Environment.Name)
+	homeDir := fmt.Sprintf("/home/%s", tcloudcli.userConfig.UserName)
+	str := fmt.Sprintf("#!/bin/bash\nsource %s/miniconda3/etc/profile.d/conda.sh", homeDir)
+	fmt.Fprintln(w, str)
+	str = fmt.Sprintf("conda activate %s\n", config.Environment.Name)
 	fmt.Fprintln(w, str)
 
 	for _, s := range config.Entrypoint {
@@ -166,7 +197,7 @@ func (config *TuxivConfig) RunshFile(workDir string) bool {
 		fmt.Fprintln(w, str)
 	}
 	w.Flush()
-	if err = os.Chmod("go.sh", 0755); err != nil {
+	if err = os.Chmod("run.sh", 0755); err != nil {
 		fmt.Println("Run.sh chmod failed.")
 		return true
 	}
