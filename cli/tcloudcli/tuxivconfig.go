@@ -26,7 +26,7 @@ type TuxivConfig struct {
 	}
 }
 
-func (config *TuxivConfig) ParseTuxivConf(args []string) bool {
+func (config *TuxivConfig) ParseTuxivConf(args []string) (string, bool) {
 	var tuxivFile string
 	var confDir string
 	var workDir string
@@ -42,7 +42,7 @@ func (config *TuxivConfig) ParseTuxivConf(args []string) bool {
 
 	yamlFile, err := ioutil.ReadFile(tuxivFile)
 	if err != nil {
-		return true
+		return workDir, true
 	}
 
 	err = yaml.Unmarshal(yamlFile, &config)
@@ -51,21 +51,21 @@ func (config *TuxivConfig) ParseTuxivConf(args []string) bool {
 	}
 	if err = config.CondaFile(workDir, confDir); err == true {
 		fmt.Println("Environment config file generate failed.")
-		return true
+		return workDir, true
 	}
 	if err = config.SlurmFile(workDir, confDir); err == true {
 		fmt.Println("Slurm config file generate failed.")
-		return true
+		return workDir, true
 	}
 	if err = config.CityFile(confDir); err == true {
 		fmt.Println("Datasets config file generate failed.")
-		return true
+		return workDir, true
 	}
 	if err = config.RunshFile(workDir); err == true {
 		fmt.Println("Run.sh exec file generate failed.")
-		return true
+		return workDir, true
 	}
-	return false
+	return workDir, false
 }
 
 func (config *TuxivConfig) CondaFile(workDir string, confDir string) bool {
