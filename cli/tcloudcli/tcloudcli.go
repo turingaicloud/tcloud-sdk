@@ -61,12 +61,14 @@ func (tcloudcli *TcloudCli) NewSession() *ssh.Session {
 func (tcloudcli *TcloudCli) NewPrefix() {
 	if len(tcloudcli.userConfig.SSHpath) < 2 {
 		tcloudcli.prefix = ""
+	} else {
+		var str string
+		for _, s := range tcloudcli.userConfig.SSHpath[1:] {
+			str = str + fmt.Sprintf("ssh -A -t %s@%s ", tcloudcli.userConfig.UserName, s)
+		}
+		tcloudcli.prefix = str
 	}
-	var str string
-	for _, s := range tcloudcli.userConfig.SSHpath[1:] {
-		str = str + fmt.Sprintf("ssh -A -t %s@%s ", tcloudcli.userConfig.UserName, s)
-	}
-	tcloudcli.prefix = str
+
 }
 
 func NewTcloudCli(userConfig *UserConfig) *TcloudCli {
