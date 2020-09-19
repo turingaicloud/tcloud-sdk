@@ -67,29 +67,12 @@ Tcloud examples, which includes: helloworld, TensorFlow, PyTorch, MXNet.
 
 + Training process:
 
-  + Enter the directory and follow the steps.
-
-  + Build environment
+  + Enter the `TACC_WORKDIR` directory and follow the steps.
++ Build environment: `tcloud build tuxiv.conf`
+  + Submit job: `tcloud submit`
   
-    ~~~shell
-  tcloud build tuxiv.conf
-    ~~~
+  + Monitor job: `tcloud show [job id]`
 
-  + Submit job
-  
-    ~~~shell
-  tcloud submit
-    ~~~
+  + Cancel job: `tcloud cancel [job id]`
 
-  + Monitor job
-  
-    ~~~shell
-  tcloud show [job id]
-    ~~~
-
-  + Cancel job
-  
-    ~~~shell
-    tcloud cancel [job id]
-    ~~~
 
