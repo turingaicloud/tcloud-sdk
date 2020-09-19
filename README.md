@@ -67,7 +67,7 @@ Tcloud examples, which includes: helloworld, TensorFlow, PyTorch, MXNet.
 
 + Training process:
 
-  + Enter the `TACC_WORKDIR` directory and follow the steps.
+  + Enter the directory and follow the steps.
 
   + Build environment
   
