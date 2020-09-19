@@ -51,9 +51,9 @@ Tcloud examples, which includes: helloworld, TensorFlow, PyTorch, MXNet.
     ~~~yaml
     # tuxiv.conf
     entrypoint:
-        - python ${TACC_WORKERDIR}/mnist.py 
+        - python ${TACC_WORKDIR}/mnist.py 
         - --task_index=0
-        - --data_dir=${TACC_WORKERDIR}/datasets/mnist_data
+        - --data_dir=${TACC_WORKDIR}/datasets/mnist_data
         - --batch_size=1
     environment:
         name: tf 
@@ -67,7 +67,7 @@ Tcloud examples, which includes: helloworld, TensorFlow, PyTorch, MXNet.
 
 + Training process:
 
-  Enter the `TACC_WORKDIR` directory and follow the steps.
+  + Enter the `TACC_WORKDIR` directory and follow the steps.
 
   + Build environment
   
