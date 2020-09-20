@@ -8,7 +8,7 @@
 
 + Task: image classification
 
-+ Code: [mnist.py](https://github.com/xcwanAndy/tcloud-sdk/blob/master/examples/TuXiv_example/mnist.py)
++ Code: [mnist.py](https://github.com/xcwanAndy/tcloud-sdk/blob/master/example/TensorFlow/mnist.py)
 
 + Configuration
 
