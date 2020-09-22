@@ -216,3 +216,17 @@ func (tcloudcli *TcloudCli) XSubmit(args ...string) bool {
 	fmt.Println("Job", repoName, "submitted.")
 	return false
 }
+
+func (tcloudcli *TcloudCli) XPS(args ...string) bool {
+	cmd := fmt.Sprintf("%s squeue", tcloudcli.prefix)
+	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
+		fmt.Println("Failed to run cmd in tcloud ps: ", err)
+		return true
+	}
+	return false
+}
+
+// TODO()
+func (tcloudcli *TcloudCli) XConfig(args ...string) bool {
+	return false
+}

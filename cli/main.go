@@ -28,6 +28,8 @@ func newTcloudCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 	}
 	tcloudCmd.AddCommand(cmd.NewBuildCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewSubmitCommand(cli))
+	tcloudCmd.AddCommand(cmd.NewConfigCommand(cli))
+	tcloudCmd.AddCommand(cmd.NewPSCommand(cli))
 	return tcloudCmd
 }
 
