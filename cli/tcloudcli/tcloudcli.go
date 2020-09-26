@@ -151,23 +151,6 @@ func (tcloudcli *TcloudCli) SendRepoToCluster(repoName string, src string) (stri
 
 // SCP from SSHPath[0] to localhost
 func (tcloudcli *TcloudCli) RecvFromCluster(src string, dst string, IsDir bool) bool {
-	// if len(tcloudcli.userConfig.SSHpath) == 2 {
-	// 	srcIP := tcloudcli.userConfig.SSHpath[1]
-	// 	srcPath := fmt.Sprintf("%s@%s:%s", tcloudcli.userConfig.UserName, srcIP, src)
-	// 	dstIP := tcloudcli.userConfig.SSHpath[0]
-	// 	dstPath := fmt.Sprintf("%s@%s:%s", tcloudcli.userConfig.UserName, dstIP, src)
-
-	// 	cmd := exec.Command("scp", prefix, srcPath, dstPath)
-	// 	fmt.Println(cmd)
-	// 	if _, err := cmd.CombinedOutput(); err != nil {
-	// 		fmt.Println("Failed to run cmd in RecvFromCluster ", err)
-	// 		return true
-	// 	}
-	// } else if len(tcloudcli.userConfig.SSHpath) > 2 {
-	// 	fmt.Println("Not support multi-hop recv")
-	// 	return true
-	// }
-
 	srcIP := tcloudcli.userConfig.SSHpath[0]
 	srcPath := fmt.Sprintf("%s@%s:%s", tcloudcli.userConfig.UserName, srcIP, src)
 	dstPath := fmt.Sprintf("%s", dst)
