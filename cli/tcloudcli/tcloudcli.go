@@ -1,14 +1,15 @@
 package tcloudcli
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"math/rand"
 	"time"
 
 	shellquote "github.com/gonuts/go-shellquote"
@@ -92,9 +93,11 @@ func (tcloudcli *TcloudCli) RemoteExecCmd(cmd string) bool {
 		fmt.Println("Failed to create StdinPipe", err)
 		return true
 	}
+	sess.Stdout = os.Stdout
+	sess.Stderr = os.Stderr
 
 	if err := sess.Run(cmd); err != nil {
-		fmt.Println("Failed to run cmd in SendToCluster ", err)
+		fmt.Println("Failed to run cmd \"", cmd, "\"", err)
 		w.Close()
 		return true
 	}
@@ -109,7 +112,7 @@ func (tcloudcli *TcloudCli) RemoteExecCmd(cmd string) bool {
 	return false
 }
 
-func (tcloudcli *TcloudCli) SendToCluster(repoName string, src string) (string, bool) {
+func (tcloudcli *TcloudCli) SendRepoToCluster(repoName string, src string) (string, bool) {
 	f, err := os.Stat(src)
 	if err != nil {
 		fmt.Println("Failed to send to cluster. %s not exists.", src)
@@ -125,7 +128,7 @@ func (tcloudcli *TcloudCli) SendToCluster(repoName string, src string) (string, 
 	dst = fmt.Sprintf("%s@%s:/home/%s/", tcloudcli.userConfig.UserName, dst, tcloudcli.userConfig.UserName)
 	cmd := exec.Command("scp", prefix, "-i", tcloudcli.userConfig.authFile, src, dst)
 	if _, err := cmd.CombinedOutput(); err != nil {
-		fmt.Println("Failed to run cmd in SendToCluster ", err)
+		fmt.Println("Failed to run cmd in SendRepoToCluster ", err)
 		return dst, true
 	}
 	if len(tcloudcli.userConfig.SSHpath) < 2 {
@@ -146,30 +149,42 @@ func (tcloudcli *TcloudCli) SendToCluster(repoName string, src string) (string, 
 	}
 }
 
-func (tcloudcli *TcloudCli) RecvFileFromCluster(src string, dst string) bool {
-	dst := tcloudcli.userConfig.SSHpath[0]
-	dst = fmt.Sprintf("%s@%s:/home/%s/", tcloudcli.userConfig.UserName, dst, tcloudcli.userConfig.UserName)
-	cmd := exec.Command("scp", "-i", tcloudcli.userConfig.authFile, src, dst)
-	if _, err := cmd.CombinedOutput(); err != nil {
-		fmt.Println("Failed to run cmd in SendToCluster ", err)
-		return dst, true
-	}
-	if len(tcloudcli.userConfig.SSHpath) < 2 {
-		return dst, false
-	} else if len(tcloudcli.userConfig.SSHpath) == 2 {
-		src := fmt.Sprintf("/home/%s/%s", tcloudcli.userConfig.UserName, repoName)
-		dst := tcloudcli.userConfig.SSHpath[1]
-		dst = fmt.Sprintf("%s@%s:/home/%s/", tcloudcli.userConfig.UserName, dst, tcloudcli.userConfig.UserName)
-		cmd := shellquote.Join("scp", prefix, src, dst)
-		if err := tcloudcli.RemoteExecCmd(cmd); err == true {
-			fmt.Println("Failed to send repo from Host:", tcloudcli.userConfig.SSHpath[0], " to Host:", tcloudcli.userConfig.SSHpath[1])
-			return dst, true
-		}
-		return dst, false
+// SCP from SSHPath[0] to localhost
+func (tcloudcli *TcloudCli) RecvFromCluster(src string, dst string, IsDir bool) bool {
+	// if len(tcloudcli.userConfig.SSHpath) == 2 {
+	// 	srcIP := tcloudcli.userConfig.SSHpath[1]
+	// 	srcPath := fmt.Sprintf("%s@%s:%s", tcloudcli.userConfig.UserName, srcIP, src)
+	// 	dstIP := tcloudcli.userConfig.SSHpath[0]
+	// 	dstPath := fmt.Sprintf("%s@%s:%s", tcloudcli.userConfig.UserName, dstIP, src)
+
+	// 	cmd := exec.Command("scp", prefix, srcPath, dstPath)
+	// 	fmt.Println(cmd)
+	// 	if _, err := cmd.CombinedOutput(); err != nil {
+	// 		fmt.Println("Failed to run cmd in RecvFromCluster ", err)
+	// 		return true
+	// 	}
+	// } else if len(tcloudcli.userConfig.SSHpath) > 2 {
+	// 	fmt.Println("Not support multi-hop recv")
+	// 	return true
+	// }
+
+	srcIP := tcloudcli.userConfig.SSHpath[0]
+	srcPath := fmt.Sprintf("%s@%s:%s", tcloudcli.userConfig.UserName, srcIP, src)
+	dstPath := fmt.Sprintf("%s", dst)
+
+	var cmd *exec.Cmd
+	if IsDir {
+		cmd = exec.Command("scp", "-r", "-i", tcloudcli.userConfig.authFile, srcPath, dstPath)
 	} else {
-		fmt.Println("Not support multi-hop send")
-		return dst, true
+		cmd = exec.Command("scp", "-i", tcloudcli.userConfig.authFile, srcPath, dstPath)
 	}
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		fmt.Println("Failed to run cmd in RecvFromCluster ", err.Error(), stderr.String())
+		return true
+	}
+	return false
 }
 
 func (tcloudcli *TcloudCli) XBuild(args ...string) {
@@ -194,7 +209,7 @@ func (tcloudcli *TcloudCli) XBuild(args ...string) {
 	}
 }
 func (tcloudcli *TcloudCli) UploadRepo(repoName string, localWorkDir string) bool {
-	dst, err := tcloudcli.SendToCluster(repoName, localWorkDir)
+	dst, err := tcloudcli.SendRepoToCluster(repoName, localWorkDir)
 	if err == true {
 		fmt.Println("Failed to upload repo to ", dst)
 		return true
@@ -226,6 +241,7 @@ func (tcloudcli *TcloudCli) CondaRemove(envName string, randString string) bool 
 	fmt.Println("Previous environment \"", envName, "\" removed.")
 	return false
 }
+
 func RandString(n int) string {
 	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	const (
@@ -271,13 +287,35 @@ func (tcloudcli *TcloudCli) XSubmit(args ...string) bool {
 func (tcloudcli *TcloudCli) XPS(args ...string) bool {
 	cmd := fmt.Sprintf("%s squeue", tcloudcli.prefix)
 	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
-		fmt.Println("Failed to run cmd in tcloud ps: ", err)
+		fmt.Println("Failed to run cmd in tcloud ps.")
 		return true
 	}
 	return false
 }
 
-// TODO()
+// TODO(Just a receive file prototype, dstPath TODEFINE, config TODEFINE)
 func (tcloudcli *TcloudCli) XConfig(args ...string) bool {
-	return false
+	// TODO(config file path)
+	if len(args) == 1 {
+		// Remote receive config file
+		src := fmt.Sprintf("/home/%s/%s/main.go", tcloudcli.userConfig.UserName, args[0])
+		dst := fmt.Sprintf("%s", filepath.Join(os.Getenv("HOME"), ".tcloud"))
+		IsDir := false
+
+		cmd := fmt.Sprintf("scp %s@%s:%s %s", tcloudcli.userConfig.UserName, tcloudcli.userConfig.SSHpath[1], src, src)
+		if err := tcloudcli.RemoteExecCmd(cmd); err == true {
+			fmt.Println("Failed to receive file at Staging Node: ", err)
+			return true
+		}
+
+		if err := tcloudcli.RecvFromCluster(src, dst, IsDir); err == true {
+			fmt.Println("Failed to receive file at localhost.")
+			return true
+		}
+		// TODO(Parse config file and update shell)
+		fmt.Println("User's file configured.")
+		return false
+	}
+	fmt.Println("Failed to parse args.")
+	return true
 }
