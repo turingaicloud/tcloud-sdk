@@ -144,6 +144,32 @@ func (tcloudcli *TcloudCli) SendToCluster(repoName string, src string) (string, 
 	}
 }
 
+func (tcloudcli *TcloudCli) RecvFileFromCluster(src string, dst string) bool {
+	dst := tcloudcli.userConfig.SSHpath[0]
+	dst = fmt.Sprintf("%s@%s:/home/%s/", tcloudcli.userConfig.UserName, dst, tcloudcli.userConfig.UserName)
+	cmd := exec.Command("scp", "-i", tcloudcli.userConfig.authFile, src, dst)
+	if _, err := cmd.CombinedOutput(); err != nil {
+		fmt.Println("Failed to run cmd in SendToCluster ", err)
+		return dst, true
+	}
+	if len(tcloudcli.userConfig.SSHpath) < 2 {
+		return dst, false
+	} else if len(tcloudcli.userConfig.SSHpath) == 2 {
+		src := fmt.Sprintf("/home/%s/%s", tcloudcli.userConfig.UserName, repoName)
+		dst := tcloudcli.userConfig.SSHpath[1]
+		dst = fmt.Sprintf("%s@%s:/home/%s/", tcloudcli.userConfig.UserName, dst, tcloudcli.userConfig.UserName)
+		cmd := shellquote.Join("scp", prefix, src, dst)
+		if err := tcloudcli.RemoteExecCmd(cmd); err == true {
+			fmt.Println("Failed to send repo from Host:", tcloudcli.userConfig.SSHpath[0], " to Host:", tcloudcli.userConfig.SSHpath[1])
+			return dst, true
+		}
+		return dst, false
+	} else {
+		fmt.Println("Not support multi-hop send")
+		return dst, true
+	}
+}
+
 func (tcloudcli *TcloudCli) XBuild(args ...string) {
 	var config TuxivConfig
 	localWorkDir, repoName, err := config.ParseTuxivConf(tcloudcli, args)
