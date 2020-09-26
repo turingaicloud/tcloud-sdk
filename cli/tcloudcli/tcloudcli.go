@@ -8,6 +8,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"math/rand"
+	"time"
 
 	shellquote "github.com/gonuts/go-shellquote"
 	"golang.org/x/crypto/ssh"
@@ -173,6 +175,7 @@ func (tcloudcli *TcloudCli) RecvFileFromCluster(src string, dst string) bool {
 func (tcloudcli *TcloudCli) XBuild(args ...string) {
 	var config TuxivConfig
 	localWorkDir, repoName, err := config.ParseTuxivConf(tcloudcli, args)
+	randString := RandString(16)
 	if err == true {
 		fmt.Println("Parse tuxiv config file failed.")
 		os.Exit(-1)
@@ -181,11 +184,11 @@ func (tcloudcli *TcloudCli) XBuild(args ...string) {
 		fmt.Println("Upload repository env failed")
 		os.Exit(-1)
 	}
-	if err = tcloudcli.CondaRemove(config.Environment.Name); err == true {
+	if err = tcloudcli.CondaRemove(config.Environment.Name, randString); err == true {
 		fmt.Println("Remove conda env failed")
 		os.Exit(-1)
 	}
-	if err = tcloudcli.CondaCreate(repoName, config.Environment.Name); err == true {
+	if err = tcloudcli.CondaCreate(repoName, config.Environment.Name, randString); err == true {
 		fmt.Println("Create conda env failed")
 		os.Exit(-1)
 	}
@@ -199,11 +202,11 @@ func (tcloudcli *TcloudCli) UploadRepo(repoName string, localWorkDir string) boo
 	fmt.Println("Successfully upload repo to ", dst)
 	return false
 }
-func (tcloudcli *TcloudCli) CondaCreate(repoName string, envName string) bool {
+func (tcloudcli *TcloudCli) CondaCreate(repoName string, envName string, randString string) bool {
 	homeDir := fmt.Sprintf("/home/%s", tcloudcli.userConfig.UserName)
 	condaBin := fmt.Sprintf("%s/miniconda3/bin/conda", homeDir)
 	condaYaml := fmt.Sprintf("%s/%s/configurations/conda.yaml", homeDir, repoName)
-	cmd := fmt.Sprintf("%s %s env create -f %s\n", tcloudcli.prefix, condaBin, condaYaml)
+	cmd := fmt.Sprintf("%s %s env create -f %s -n %s\n", tcloudcli.prefix, condaBin, condaYaml, envName+randString)
 	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
 		fmt.Println("Failed to run cmd in CondaCreate ", err)
 		return true
@@ -212,10 +215,10 @@ func (tcloudcli *TcloudCli) CondaCreate(repoName string, envName string) bool {
 	fmt.Println("Environment \"", envName, "\" created.")
 	return false
 }
-func (tcloudcli *TcloudCli) CondaRemove(envName string) bool {
+func (tcloudcli *TcloudCli) CondaRemove(envName string, randString string) bool {
 	homeDir := fmt.Sprintf("/home/%s", tcloudcli.userConfig.UserName)
 	condaBin := fmt.Sprintf("%s/miniconda3/bin/conda", homeDir)
-	cmd := fmt.Sprintf("%s %s remove -n %s --all -y", tcloudcli.prefix, condaBin, envName)
+	cmd := fmt.Sprintf("%s %s remove -n %s --all -y", tcloudcli.prefix, condaBin, envName+randString)
 	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
 		fmt.Println("Failed to run cmd in CondaRemove ", err)
 		return true
@@ -223,7 +226,29 @@ func (tcloudcli *TcloudCli) CondaRemove(envName string) bool {
 	fmt.Println("Previous environment \"", envName, "\" removed.")
 	return false
 }
-
+func RandString(n int) string {
+	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	const (
+		letterIdxBits = 6
+		letterIdxMask = 1<<letterIdxBits - 1
+		letterIdxMax  = 63 / letterIdxBits
+	)
+	var src = rand.NewSource(time.Now().UnixNano())
+	sb := strings.Builder{}
+	sb.Grow(n)
+	for i, cache, remain := n-1, src.Int63(), letterIdxMax; i >= 0; {
+		if remain == 0 {
+			cache, remain = src.Int63(), letterIdxMax
+		}
+		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
+			sb.WriteByte(letterBytes[idx])
+			i--
+		}
+		cache >>= letterIdxBits
+		remain--
+	}
+	return sb.String()
+}
 func (tcloudcli *TcloudCli) XSubmit(args ...string) bool {
 	repoName := ""
 	if len(args) < 1 {
