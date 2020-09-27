@@ -277,6 +277,33 @@ func (tcloudcli *TcloudCli) XPS(args ...string) bool {
 }
 
 // TODO(Just a receive file prototype, dstPath TODEFINE, config TODEFINE)
+func (tcloudcli *TcloudCli) XInit(args ...string) bool {
+	// TODO(config file path)
+	if len(args) == 1 {
+		// Remote receive config file
+		src := fmt.Sprintf("/home/%s/%s/main.go", tcloudcli.userConfig.UserName, args[0])
+		dst := fmt.Sprintf("%s", filepath.Join(os.Getenv("HOME"), ".tcloud"))
+		IsDir := false
+
+		cmd := fmt.Sprintf("scp %s@%s:%s %s", tcloudcli.userConfig.UserName, tcloudcli.userConfig.SSHpath[1], src, src)
+		if err := tcloudcli.RemoteExecCmd(cmd); err == true {
+			fmt.Println("Failed to receive file at Staging Node: ", err)
+			return true
+		}
+
+		if err := tcloudcli.RecvFromCluster(src, dst, IsDir); err == true {
+			fmt.Println("Failed to receive file at localhost.")
+			return true
+		}
+		// TODO(Parse config file and update shell)
+		fmt.Println("User's file configured.")
+		return false
+	}
+	fmt.Println("Failed to parse args.")
+	return true
+}
+
+// TODO(Just a receive file prototype, dstPath TODEFINE, config TODEFINE)
 func (tcloudcli *TcloudCli) XConfig(args ...string) bool {
 	// TODO(config file path)
 	if len(args) == 1 {
