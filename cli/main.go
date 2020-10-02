@@ -12,7 +12,8 @@ import (
 
 func main() {
 	home := homeDIR()
-	userConfig := tcloudcli.NewUserConfig(filepath.Join(home, ".tcloud", "user.json"), filepath.Join(home, ".tcloud", "TACC.pem"))
+	// userConfig := tcloudcli.NewUserConfig(filepath.Join(home, ".tcloud", "user.json"), filepath.Join(home, ".tcloud", "TACC.pem"))
+	userConfig := tcloudcli.NewUserConfig(filepath.Join(home, ".tcloud", ".userconfig"))
 	cli := tcloudcli.NewTcloudCli(userConfig)
 	tcloudCmd := newTcloudCommand(cli)
 	if err := tcloudCmd.Execute(); err != nil {
@@ -30,6 +31,11 @@ func newTcloudCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 	tcloudCmd.AddCommand(cmd.NewSubmitCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewConfigCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewPSCommand(cli))
+	tcloudCmd.AddCommand(cmd.NewInitCommand(cli))
+	tcloudCmd.AddCommand(cmd.NewDownloadCommand(cli))
+
+	var Verbose bool
+	tcloudCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
 	return tcloudCmd
 }
 

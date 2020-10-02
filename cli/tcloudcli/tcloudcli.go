@@ -22,10 +22,27 @@ type TcloudCli struct {
 	prefix string
 }
 
+func (tcloudcli *TcloudCli) UserConfig(option string) []string {
+	var s []string
+	switch strings.ToLower(option) {
+	case "username":
+		return append(s, tcloudcli.userConfig.UserName)
+	case "authfile":
+		return append(s, tcloudcli.userConfig.AuthFile)
+	case "sshpath":
+		return tcloudcli.userConfig.SSHpath
+	case "path":
+		return append(s, tcloudcli.userConfig.path)
+	default:
+		fmt.Println("No options found in userconfig")
+		return s
+	}
+}
+
 func (tcloudcli *TcloudCli) NewSession() *ssh.Session {
-	buffer, err := ioutil.ReadFile(tcloudcli.userConfig.authFile)
+	buffer, err := ioutil.ReadFile(tcloudcli.userConfig.AuthFile)
 	if err != nil {
-		fmt.Println("Failed to read authFile at %s", tcloudcli.userConfig.authFile)
+		fmt.Println("Failed to read AuthFile at %s", tcloudcli.userConfig.AuthFile)
 		return nil
 	}
 	signer, _ := ssh.ParsePrivateKey(buffer)
@@ -126,7 +143,7 @@ func (tcloudcli *TcloudCli) SendRepoToCluster(repoName string, src string) (stri
 	// TODO(A bit wrong when transmit file. Not the same directory as src)
 	dst := tcloudcli.userConfig.SSHpath[0]
 	dst = fmt.Sprintf("%s@%s:/home/%s/", tcloudcli.userConfig.UserName, dst, tcloudcli.userConfig.UserName)
-	cmd := exec.Command("scp", prefix, "-i", tcloudcli.userConfig.authFile, src, dst)
+	cmd := exec.Command("scp", prefix, "-i", tcloudcli.userConfig.AuthFile, src, dst)
 	if _, err := cmd.CombinedOutput(); err != nil {
 		fmt.Println("Failed to run cmd in SendRepoToCluster ", err)
 		return dst, true
@@ -157,9 +174,9 @@ func (tcloudcli *TcloudCli) RecvFromCluster(src string, dst string, IsDir bool) 
 
 	var cmd *exec.Cmd
 	if IsDir {
-		cmd = exec.Command("scp", "-r", "-i", tcloudcli.userConfig.authFile, srcPath, dstPath)
+		cmd = exec.Command("scp", "-r", "-i", tcloudcli.userConfig.AuthFile, srcPath, dstPath)
 	} else {
-		cmd = exec.Command("scp", "-i", tcloudcli.userConfig.authFile, srcPath, dstPath)
+		cmd = exec.Command("scp", "-i", tcloudcli.userConfig.AuthFile, srcPath, dstPath)
 	}
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
@@ -267,8 +284,13 @@ func (tcloudcli *TcloudCli) XSubmit(args ...string) bool {
 	return false
 }
 
-func (tcloudcli *TcloudCli) XPS(args ...string) bool {
-	cmd := fmt.Sprintf("%s squeue", tcloudcli.prefix)
+func (tcloudcli *TcloudCli) XPS(job string, args ...string) bool {
+	var cmd string
+	if job == "" {
+		cmd = fmt.Sprintf("%s squeue", tcloudcli.prefix)
+	} else {
+		cmd = fmt.Sprintf("%s squeue -j %s", tcloudcli.prefix, job)
+	}
 	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
 		fmt.Println("Failed to run cmd in tcloud ps.")
 		return true
@@ -303,33 +325,11 @@ func (tcloudcli *TcloudCli) XInit(args ...string) bool {
 	return true
 }
 
-// TODO(Just a receive file prototype, dstPath TODEFINE, config TODEFINE)
-func (tcloudcli *TcloudCli) XConfig(args ...string) bool {
-	// TODO(config file path)
-	if len(args) == 1 {
-		// Remote receive config file
-		src := fmt.Sprintf("/home/%s/%s/main.go", tcloudcli.userConfig.UserName, args[0])
-		dst := fmt.Sprintf("%s", filepath.Join(os.Getenv("HOME"), ".tcloud"))
-		IsDir := false
-
-		cmd := fmt.Sprintf("scp %s@%s:%s %s", tcloudcli.userConfig.UserName, tcloudcli.userConfig.SSHpath[1], src, src)
-		if err := tcloudcli.RemoteExecCmd(cmd); err == true {
-			fmt.Println("Failed to receive file at Staging Node: ", err)
-			return true
-		}
-
-		if err := tcloudcli.RecvFromCluster(src, dst, IsDir); err == true {
-			fmt.Println("Failed to receive file at localhost.")
-			return true
-		}
-		// TODO(Parse config file and update shell)
-		fmt.Println("User's file configured.")
-		return false
+func (tcloudcli *TcloudCli) XDownload(args ...string) bool {
+	cmd := exec.Command("wget", args[0])
+	if _, err := cmd.CombinedOutput(); err != nil {
+		fmt.Println("Failed to wget", args[0])
+		return true
 	}
-	fmt.Println("Failed to parse args.")
-	return true
-}
-
-func (tcloudcli *TcloudCli) XAttach(args ...string) bool {
-
+	return false
 }
