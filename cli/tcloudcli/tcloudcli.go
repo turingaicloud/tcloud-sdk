@@ -329,3 +329,7 @@ func (tcloudcli *TcloudCli) XConfig(args ...string) bool {
 	fmt.Println("Failed to parse args.")
 	return true
 }
+
+func (tcloudcli *TcloudCli) XAttach(args ...string) bool {
+
+}
