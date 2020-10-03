@@ -333,3 +333,11 @@ func (tcloudcli *TcloudCli) XDownload(args ...string) bool {
 	}
 	return false
 }
+func (tcloudcli *TcloudCli) XAdd(args ...string) bool {
+	cmd := fmt.Sprintf("conda install %s -n %s -y", args[0], args[1])
+	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
+		fmt.Println("Failed to install package", err)
+		return true
+	}
+	return false
+}
