@@ -1,5 +1,3 @@
-# https://github.com/pytorch/examples/blob/master/mnist/main.py
-
 from __future__ import print_function
 import argparse
 import torch
@@ -7,7 +5,17 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
+from torch.utils.data import Dataset, DataLoader
+from torch.utils.data.distributed import DistributedSampler
+from torch.nn.parallel import DistributedDataParallel
+import os
+torch.multiprocessing.set_start_method('spawn')
 
+def dist_init(host_addr, rank, local_rank, world_size, port=23456):
+    host_addr_full = 'tcp://' + host_addr + ':' + str(port)
+    torch.distributed.init_process_group("gloo", init_method=host_addr_full,
+                                         rank=rank, world_size=world_size)
+    assert torch.distributed.is_initialized()
 
 class Net(nn.Module):
     def __init__(self):
@@ -26,7 +34,7 @@ class Net(nn.Module):
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return F.log_softmax(x, dim=1)
-
+    
 def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
@@ -41,10 +49,11 @@ def train(args, model, device, train_loader, optimizer, epoch):
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
 
-def test(args, model, device, test_loader):
+def test(args, model, device, test_loader, world_size):
     model.eval()
     test_loss = 0
     correct = 0
+    length = len(test_loader.dataset)/world_size
     with torch.no_grad():
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
@@ -53,11 +62,11 @@ def test(args, model, device, test_loader):
             pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
 
-    test_loss /= len(test_loader.dataset)
+    test_loss /= length
 
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        test_loss, correct, len(test_loader.dataset),
-        100. * correct / len(test_loader.dataset)))
+        test_loss, correct, length,
+        100. * correct / length))
 
 def main():
     # Training settings
@@ -88,30 +97,45 @@ def main():
     device = torch.device("cuda" if use_cuda else "cpu")
 
     kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
-    train_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('data', train=True, download=False,
+    rank = int(os.environ['SLURM_PROCID'])
+    local_rank = int(os.environ['SLURM_LOCALID'])
+    world_size = int(os.environ['SLURM_NTASKS'])
+    ip = "TACC1"
+
+    dist_init(ip, rank, local_rank, world_size)
+    train_dataset = datasets.MNIST('data', train=True, download=True,
                        transform=transforms.Compose([
                            transforms.ToTensor(),
                            transforms.Normalize((0.1307,), (0.3081,))
-                       ])),
-        batch_size=args.batch_size, shuffle=True, **kwargs)
-    test_loader = torch.utils.data.DataLoader(
-        datasets.MNIST('data', train=False, transform=transforms.Compose([
+                       ]))
+    train_sampler = DistributedSampler(train_dataset, num_replicas=world_size, rank=rank)
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset,
+        batch_size=args.batch_size, 
+        sampler=train_sampler,
+        **kwargs)
+    test_dataset = datasets.MNIST('data', train=False, transform=transforms.Compose([
                            transforms.ToTensor(),
                            transforms.Normalize((0.1307,), (0.3081,))
-                       ])),
-        batch_size=args.test_batch_size, shuffle=True, **kwargs)
+                       ]))
+    test_sampler = DistributedSampler(test_dataset, num_replicas=world_size, rank=rank)
 
+    test_loader = torch.utils.data.DataLoader(
+        test_dataset,
+        batch_size=args.test_batch_size, 
+        sampler=test_sampler, 
+        **kwargs)
 
     model = Net().to(device)
+    model = DistributedDataParallel(model)
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
 
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
-        test(args, model, device, test_loader)
+        test(args, model, device, test_loader, world_size)
 
     if (args.save_model):
         torch.save(model.state_dict(),"mnist_cnn.pt")
-
+        
 if __name__ == '__main__':
     main()
