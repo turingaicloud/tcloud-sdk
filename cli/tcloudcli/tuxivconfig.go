@@ -203,3 +203,38 @@ func (config *TuxivConfig) RunshFile(tcloudcli *TcloudCli, localWorkDir string) 
 	}
 	return false
 }
+func (config *TuxivConfig) AddDepTuxivFile(tcloudcli *TcloudCli, args []string) bool {
+	var tuxivFile string
+	tuxivFile = "tuxiv.conf"
+	yamlFile, err := ioutil.ReadFile(tuxivFile)
+	if err != nil {
+		fmt.Println("Read file failed.")
+		return true
+	}
+	err = yaml.Unmarshal(yamlFile, config)
+	if err != nil {
+		fmt.Println("Parse original yaml file failed.")
+		return true
+	}
+	for i := 0; i < len(config.Environment.Dependencies); i++ {
+		slist := strings.Split(config.Environment.Dependencies[i], "=")
+		deplist := strings.Split(args[0], "=")
+		if deplist[0] == slist[0]{
+			fmt.Println("Remove the original dependency %s", config.Environment.Dependencies[i])
+			config.Environment.Dependencies = append(config.Environment.Dependencies[:i], config.Environment.Dependencies[i+1:]...)
+		}
+	}
+	config.Environment.Dependencies = append(config.Environment.Dependencies, args[0])
+	yamlFile, err = yaml.Marshal(config)
+	if err != nil {
+		fmt.Println("Format file failed.")
+		return true
+	}
+	err = ioutil.WriteFile(tuxivFile, yamlFile, 0755)
+	if err != nil {
+		fmt.Println("Write file failed.")
+		return true
+	}
+
+	return false
+}

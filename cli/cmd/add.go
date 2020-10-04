@@ -9,7 +9,7 @@ func NewAddCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 	return &cobra.Command{
 		Use:   "add",
 		Short: "Add dependency to conda environment",
-		Args:  cobra.MaximumNArgs(2),
+		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			cli.XAdd(args...)
 		},
