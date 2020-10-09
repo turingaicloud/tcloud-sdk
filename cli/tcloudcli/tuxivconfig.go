@@ -115,7 +115,7 @@ func (config *TuxivConfig) CondaFile(localConfDir string, remoteWorkDir string) 
 		fmt.Fprintln(w, str)
 	}
 	// prefix - set to ${workDir}/environment
-	fmt.Fprintln(w, fmt.Sprintf("prefix: %s", filepath.Join(remoteWorkDir, "environment")))
+	// fmt.Fprintln(w, fmt.Sprintf("prefix: %s", filepath.Join(remoteWorkDir, "environment")))
 	w.Flush()
 	return false
 }

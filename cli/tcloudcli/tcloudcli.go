@@ -334,18 +334,37 @@ func (tcloudcli *TcloudCli) XDownload(args ...string) bool {
 	return false
 }
 func (tcloudcli *TcloudCli) XAdd(args ...string) bool {
-	// homeDir := fmt.Sprintf("/home/%s", tcloudcli.userConfig.UserName)
-	// condaBin := fmt.Sprintf("%s/miniconda3/bin/conda", homeDir)
-	// cmd := fmt.Sprintf("%s %s install %s -n %s -y", tcloudcli.prefix, condaBin, args[0], args[1])
-	// if err := tcloudcli.RemoteExecCmd(cmd); err == true {
-	// 	fmt.Println("Failed to install package", err)
-	// 	return true
-	// }
+	// Add new dependency to tuxiv.conf
 	var config TuxivConfig
 	err := config.AddDepTuxivFile(tcloudcli, args)
 	if err == true {
 		fmt.Println("Add dependency to tuxiv config file failed.")
 		os.Exit(-1)
 	}
+	return false
+}
+func (tcloudcli *TcloudCli) XInstall(args ...string) bool{
+	var config TuxivConfig
+	_, _, err := config.ParseTuxivConf(tcloudcli, args)
+	if err == true {
+		fmt.Println("Parse tuxiv config file failed.")
+		os.Exit(-1)
+	}
+	condaYaml := fmt.Sprintf("./configurations/conda.yaml")
+	removeCmd := exec.Command("conda", "env", "remove", "-n", config.Environment.Name)
+	if out, err := removeCmd.CombinedOutput(); err != nil {
+		fmt.Println("Failed to create local environment err: ", err)
+		return true
+	}else{
+		fmt.Printf("%s\n", string(out))
+	}
+	createCmd := exec.Command("conda", "env", "create", "-f", condaYaml)
+	if out, err := createCmd.CombinedOutput(); err != nil {
+		fmt.Println("Failed to create local environment err: ", err)
+		return true
+	}else{
+		fmt.Printf("%s\n", string(out))
+	}
+	fmt.Println("Environment \"", config.Environment.Name, "\" created locally.")
 	return false
 }
