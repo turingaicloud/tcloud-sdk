@@ -11,7 +11,7 @@ func NewBuildCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 		Short: "Parse tuxiv.confg and Setup conda environment",
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			cli.XBuild(args...)
+			cli.BuildEnv(args...)
 		},
 	}
 }

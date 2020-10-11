@@ -187,7 +187,7 @@ func (tcloudcli *TcloudCli) RecvFromCluster(src string, dst string, IsDir bool) 
 	return false
 }
 
-func (tcloudcli *TcloudCli) XBuild(args ...string) {
+func (tcloudcli *TcloudCli) BuildEnv(args ...string) {
 	var config TuxivConfig
 	localWorkDir, repoName, err := config.ParseTuxivConf(tcloudcli, args)
 	randString := RandString(16)
@@ -266,6 +266,7 @@ func RandString(n int) string {
 	return sb.String()
 }
 func (tcloudcli *TcloudCli) XSubmit(args ...string) bool {
+	tcloudcli.BuildEnv(args...)
 	repoName := ""
 	if len(args) < 1 {
 		localWorkDir, _ := filepath.Abs(".")
@@ -343,7 +344,7 @@ func (tcloudcli *TcloudCli) XAdd(args ...string) bool {
 	}
 	return false
 }
-func (tcloudcli *TcloudCli) XInstall(args ...string) bool{
+func (tcloudcli *TcloudCli) XInstall(args ...string) bool {
 	var config TuxivConfig
 	_, _, err := config.ParseTuxivConf(tcloudcli, args)
 	if err == true {
@@ -355,14 +356,14 @@ func (tcloudcli *TcloudCli) XInstall(args ...string) bool{
 	if out, err := removeCmd.CombinedOutput(); err != nil {
 		fmt.Println("Failed to create local environment err: ", err)
 		return true
-	}else{
+	} else {
 		fmt.Printf("%s\n", string(out))
 	}
 	createCmd := exec.Command("conda", "env", "create", "-f", condaYaml)
 	if out, err := createCmd.CombinedOutput(); err != nil {
 		fmt.Println("Failed to create local environment err: ", err)
 		return true
-	}else{
+	} else {
 		fmt.Printf("%s\n", string(out))
 	}
 	fmt.Println("Environment \"", config.Environment.Name, "\" created locally.")
