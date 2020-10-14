@@ -1,16 +1,20 @@
 # TCloud Examples
 
-## Hello world
+TACC support multiple ML frameworks such as TensorFlow, Pytorch and MXNet. Besides we will support some specialized ML framework like FATE and so on. The followings are the job submiting examples for different frameworks.
 
 ## TensorFlow
 
 + Dataset: mnist
-
 + Task: image classification
-
 + Code: [mnist.py](https://github.com/xcwanAndy/tcloud-sdk/blob/master/example/TensorFlow/mnist.py)
 
+### Getting started
+
++ Install tcloud CLI, and run `tcloud init` to generate template for configuration.
+
 + Configuration
+
+  + Config user informations using `tcloud config`.
 
   + TACC ENV
 
@@ -37,22 +41,32 @@
             - nodes=2
     ~~~
 
-+ Training process:
+  + Model code modification
 
-  + Enter the `TACC_WORKDIR` directory and follow the steps.
-  + Build environment: `tcloud build tuxiv.conf`
-  + Submit job: `tcloud submit`
-  + Monitor job: `tcloud show [job id]`
-  + Cancel job: `tcloud cancel [job id]`
+    Use ` tf.distribute.cluster_resolver.SlurmClusterResolver`  instead of other resolvers.
+
+### Training
+
++ Enter the `TACC_WORKDIR` directory and follow the steps.
++ Build environment and submit job: `tcloud submit`
++ Monitor job: `tcloud ps [job id]`
++ Cancel job: `tcloud cancel [job id]`
+
+
 
 ## PyTorch
+
 + Dataset: mnist
-
 + Task: image classification
-
 + Code: [mnist.py](https://github.com/xcwanAndy/tcloud-sdk/blob/master/example/Pytorch/mnist.py)
 
+### Getting started
+
++ Install tcloud CLI, and run `tcloud init` to generate template for configuration.
+
 + Configuration
+
+  + Config user informations using `tcloud config`.
 
   + TACC ENV
 
@@ -64,7 +78,6 @@
 
     ~~~yaml
     # tuxiv.conf
-    
     entrypoint:
         - python ${TACC_WORKDIR}/mnist.py --epoch=3
     environment:
@@ -72,29 +85,58 @@
         dependencies:
             - pytorch=1.6.0
             - torchvision=0.7.0
-        channel: pytorch
+        channels: pytorch
     job:
         name: test
         general:
             - nodes=2
     ~~~
 
-+ Training process:
+  + Model code modification
 
-  + Enter the `TACC_WORKDIR` directory and follow the steps.
-  + Build environment: `tcloud build tuxiv.conf`
-  + Submit job: `tcloud submit`
-  + Monitor job: `tcloud show [job id]`
-  + Cancel job: `tcloud cancel [job id]`
+    Obtain environment variables from slurm cluster, and set the parameters for initialize the cluster.
+
+    ~~~python
+    # example
+    def dist_init(host_addr, rank, local_rank, world_size, port=23456):
+        host_addr_full = 'tcp://' + host_addr + ':' + str(port)
+        torch.distributed.init_process_group("gloo", init_method=host_addr_full,
+                                             rank=rank, world_size=world_size)
+      assert torch.distributed.is_initialized()
+    
+    def get_ip(iplist):
+        ip = iplist.split('[')[0] + iplist.split('[')[1].split('-')[0]
+        
+    rank = int(os.environ['SLURM_PROCID'])
+    local_rank = int(os.environ['SLURM_LOCALID'])
+    world_size = int(os.environ['SLURM_NTASKS'])
+    iplist = os.environ['SLURM_STEP_NODELIST']
+    ip = get_ip(iplist) # function get_ip() is depends on the format of nodelist 
+    dist_init(ip, rank, local_rank, world_size)
+    ~~~
+
+### Training
+
++ Enter the `TACC_WORKDIR` directory and follow the steps.
++ Build environment and submit job: `tcloud submit`
++ Monitor job: `tcloud ps [job id]`
++ Cancel job: `tcloud cancel [job id]`
+
+
 
 ## MXNet
+
 + Dataset: mnist
-
 + Task: image classification
-
 + Code: [mnist.py](https://github.com/xcwanAndy/tcloud-sdk/blob/master/example/MXNET/mnist.py)
 
+### Getting started
+
++ Install tcloud CLI, and run `tcloud init` to generate template for configuration.
+
 + Configuration
+
+  + Config user informations using `tcloud config`.
 
   + TACC ENV
 
@@ -118,10 +160,13 @@
             - nodes=2
     ~~~
 
-+ Training process:
+  + Model code modification
 
-  + Enter the `TACC_WORKDIR` directory and follow the steps.
-  + Build environment: `tcloud build tuxiv.conf`
-  + Submit job: `tcloud submit`
-  + Monitor job: `tcloud show [job id]`
-  + Cancel job: `tcloud cancel [job id]`
+    Obtain environment variables from slurm cluster, and set the parameters for initialize the cluster.
+
+### Training
+
++ Enter the `TACC_WORKDIR` directory and follow the steps.
++ Build environment and submit job: `tcloud submit`
++ Monitor job: `tcloud ps [job id]`
++ Cancel job: `tcloud cancel [job id]`
