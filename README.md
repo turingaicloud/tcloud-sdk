@@ -1,26 +1,24 @@
 # TCLOUD-SDK
 ## Command-line Interface used for TACC development.
 ```
-TCLOUD Command-line Interface v0.0.1
+TCLOUD Command-line Interface v0.0.2
 
 Usage:
-tcloud [command]
+tcloud [command] [flags] [args]
 
 Available Commands:
     tcloud init
-    tcloud config
-    tcloud download
-    tcloud build
+    tcloud config [-u/-f] [args]
+    tcloud download [<url>]
     tcloud add
     tcloud submit
-    tcloud ps
-    tcloud attach
-    TODO[add more]
+    tcloud ps [-j] [<JOB_ID>]
+    tcloud install
 
 Use "tcloud [command] --help" for more information about a command.
 ```
 
-## Build from source code
+## Installation
 You can try out the latest features by directly install from master branch:
 
 ```
@@ -30,9 +28,17 @@ echo 'export GOPATH=$PWD' >> ~/.bash_profile
 make install
 ```
 
-## XCompile     [TODO]
-Support Linux / macOS / Windows.
+## Configuration
+Before using the tcloud CLI and submit ML jobs to TACC, you need to configure your TACC credentials. You can do this by running the `tcloud config` command:
+```
+$ tcloud config [-u/--username] MYUSERNAME
+$ tcloud config [-f/--file] MYFILEPATH
+```
 
-## Example  [TODO]
-Basic examples are provided under the [example](example) folder. These examples include: [helloworld](example/helloworld), [TensorFlow](example/TensorFlow), [PyTorch](example/PyTorch) and [MXNet](example/MXNet).
+## Configure Job Before Submission
+TODO(SECTION in TUXIV.CONF)
 
+TODO(TACC VARIABLES)
+
+## Example
+Basic examples are provided under the [example](example) folder. These examples include: [TensorFlow](example/TensorFlow), [PyTorch](example/PyTorch) and [MXNet](example/MXNet).

@@ -5,7 +5,6 @@ import (
 	"tcloud-sdk/cli/tcloudcli"
 )
 
-// TODO(), By default, no args
 func NewInitCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 	return &cobra.Command{
 		Use:   "init",

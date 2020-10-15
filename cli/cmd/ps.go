@@ -5,11 +5,10 @@ import (
 	"tcloud-sdk/cli/tcloudcli"
 )
 
-// TODO(), By default, no args
 func NewPSCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "ps",
-		Short: "Check slurm jobs' status",
+		Short: "Check submitted jobs' status",
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			job, err := cmd.Flags().GetString("job")

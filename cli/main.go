@@ -10,6 +10,8 @@ import (
 	"tcloud-sdk/cli/tcloudcli"
 )
 
+var VERSION = "0.0.2"
+
 func main() {
 	home := homeDIR()
 	// userConfig := tcloudcli.NewUserConfig(filepath.Join(home, ".tcloud", "user.json"), filepath.Join(home, ".tcloud", "TACC.pem"))
@@ -24,10 +26,10 @@ func main() {
 
 func newTcloudCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 	var tcloudCmd = &cobra.Command{
-		Use:   "tcloud",
-		Short: "TACC Command-line Interface v0.0.1",
+		Use:     "tcloud",
+		Short:   "TACC Command-line Interface v" + VERSION,
+		Version: VERSION,
 	}
-	tcloudCmd.AddCommand(cmd.NewBuildCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewSubmitCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewConfigCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewPSCommand(cli))
