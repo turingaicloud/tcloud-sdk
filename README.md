@@ -29,13 +29,14 @@ make install
 ```
 
 ## Configuration
+### CLI Configuration
 Before using the tcloud CLI and submit ML jobs to TACC, you need to configure your TACC credentials. You can do this by running the `tcloud config` command:
 ```
 $ tcloud config [-u/--username] MYUSERNAME
 $ tcloud config [-f/--file] MYFILEPATH
 ```
 
-## JOB Configuration
+### Job Configuration
 TODO(SECTION in TUXIV.CONF)
 
 TODO(TACC VARIABLES)
