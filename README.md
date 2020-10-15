@@ -37,9 +37,9 @@ $ tcloud config [-f/--file] MYFILEPATH
 ```
 
 ### Job Configuration
-TODO(SECTION in TUXIV.CONF)
+TODO(SECTION in TUXIV.CONF: entrypoint, environment, job, datasets)
 
-TODO(TACC VARIABLES)
+TODO(TACC VARIABLES: TACC_WORKDIR, TACC_MASTER_IP, TACC_CLUSTER_LIST)
 
 ## Example
 Basic examples are provided under the [example](example) folder. These examples include: [TensorFlow](example/TensorFlow), [PyTorch](example/PyTorch) and [MXNet](example/MXNet).
