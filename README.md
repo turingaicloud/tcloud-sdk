@@ -35,7 +35,7 @@ $ tcloud config [-u/--username] MYUSERNAME
 $ tcloud config [-f/--file] MYFILEPATH
 ```
 
-## Configure Job Before Submission
+## JOB Configuration
 TODO(SECTION in TUXIV.CONF)
 
 TODO(TACC VARIABLES)
