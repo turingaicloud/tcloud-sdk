@@ -369,3 +369,13 @@ func (tcloudcli *TcloudCli) XInstall(args ...string) bool {
 	fmt.Println("Environment \"", config.Environment.Name, "\" created locally.")
 	return false
 }
+func (tcloudcli *TcloudCli) XLog(job string, args ...string) bool {
+	var cmd string
+	fmt.Println("job id is:" , job)
+	cmd = fmt.Sprintf("%s cat slurm-%s.out", tcloudcli.prefix, job)
+	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
+		fmt.Println("Failed to run cmd in tcloud log.")
+		return true
+	}
+	return false
+}
