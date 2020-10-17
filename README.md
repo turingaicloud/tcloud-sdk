@@ -22,7 +22,7 @@ Use "tcloud [command] --help" for more information about a command.
 You can try out the latest features by directly install from master branch:
 
 ```
-git clone https://github.com/xcwanAndy/tcloud-sdk
+git clone https://github.com/Turing-AI-Cloud/tcloud-sdk.git
 cd tcloud-sdk
 echo 'export GOPATH=$PWD' >> ~/.bash_profile
 make install
