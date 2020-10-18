@@ -1,5 +1,5 @@
 # TCLOUD-SDK
-## Command-line Interface used for TACC development.
+## Command-line Interface used for TACC job submission.
 ```
 TCLOUD Command-line Interface v0.0.2
 
