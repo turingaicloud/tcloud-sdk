@@ -1,6 +1,6 @@
 # TCloud Examples
 
-TACC support multiple ML frameworks such as TensorFlow, Pytorch and MXNet. Besides we will support some specialized ML framework like FATE and so on. The followings are the job submiting examples for different frameworks.
+TACC support multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We will later support some specialized ML framework like FATE, etc. Here we list several job examples of different frameworks.
 
 ## TensorFlow
 
