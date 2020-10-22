@@ -41,7 +41,6 @@
     + `tclcoudcli.go` is designed for the tcloud command line related functions, every tcloud cli functions are in this file.
     + `tuxivconfig.go` is designed for the tuxiv.conf related functions, which will be called in the tcloud cli functions.
     + `userconfig.go` is designed for the user configuration ralated functions, which will be called in tcloud cli functions.
-    + 
 
 #### How to add a new command(top down view)
 
