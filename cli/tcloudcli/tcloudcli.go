@@ -377,7 +377,11 @@ func (tcloudcli *TcloudCli) XLog(job string, args ...string) bool {
 		fmt.Println("Failed to run cmd in tcloud log.")
 		return true
 	}
-	src := fmt.Sprintf("/home/%s/logs", tcloudcli.userConfig.UserName)
+	// Download the logs of tensorboard or other log files
+	// TODO: Define a section in tuxiv.conf for log file path to download
+	// logPath := tcloud.userConfig.LogPath
+	logPath := "logs"
+	src := fmt.Sprintf("/home/%s/%s", tcloudcli.userConfig.UserName, logPath)
 	dst := fmt.Sprintf(".")
 	IsDir := true
 	if err := tcloudcli.RecvFromCluster(src, dst, IsDir); err == true {
