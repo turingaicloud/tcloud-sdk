@@ -377,5 +377,12 @@ func (tcloudcli *TcloudCli) XLog(job string, args ...string) bool {
 		fmt.Println("Failed to run cmd in tcloud log.")
 		return true
 	}
+	src := fmt.Sprintf("/home/%s/logs", tcloudcli.userConfig.UserName)
+	dst := fmt.Sprintf(".")
+	IsDir := true
+	if err := tcloudcli.RecvFromCluster(src, dst, IsDir); err == true {
+			fmt.Println("Failed to receive file at localhost.")
+			return true
+	}
 	return false
 }
