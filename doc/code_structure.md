@@ -37,7 +37,7 @@
     and is called when user runs that command. The information of the command may include:  command description, requirement of args, and callable subcommand function.
   + `main.go`
     + In this file, we define the main function of CLI. 
-    + New commands can be added in the main function as the subcommand of `tcloud`.
+    + New command can be added in the main function as subcommand of `tcloud`.
   + `tcloudcli`
     + In this folder, we define all operations of `tcloud command-line`.
     + `tcloudcli.go` defines the concrete operations of CLI subcommands. It packages each operation into `X<func>` functions for calling.
