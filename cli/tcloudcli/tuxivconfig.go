@@ -50,7 +50,7 @@ func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, args []string) (
 		localConfDir = filepath.Join(localWorkDir, "configurations")
 		dirlist := strings.Split(localWorkDir, "/")
 		repoName = dirlist[len(dirlist)-1]
-		remoteWorkDir = fmt.Sprintf("/home/%s/%s", tcloudcli.userConfig.UserName, repoName)
+		remoteWorkDir = fmt.Sprintf("/home/%s/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.userConfig.Dir[0], repoName)
 		// remoteConfDir = filepath.Join(remoteWorkDir, "configurations")
 	} else {
 		tuxivFile = args[0]
@@ -58,7 +58,7 @@ func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, args []string) (
 		localConfDir = filepath.Join(localWorkDir, "configurations")
 		dirlist := strings.Split(localWorkDir, "/")
 		repoName = dirlist[len(dirlist)-1]
-		remoteWorkDir = fmt.Sprintf("/home/%s/%s", tcloudcli.userConfig.UserName, repoName)
+		remoteWorkDir = fmt.Sprintf("/home/%s/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.userConfig.Dir[0], repoName)
 		// remoteConfDir = filepath.Join(remoteWorkDir, "configurations")
 	}
 
@@ -186,7 +186,7 @@ func (config *TuxivConfig) RunshFile(tcloudcli *TcloudCli, localWorkDir string) 
 	defer f.Close()
 
 	w := bufio.NewWriter(f)
-	homeDir := fmt.Sprintf("/home/%s", tcloudcli.userConfig.UserName)
+	homeDir := fmt.Sprintf("/home/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.userConfig.Dir[0])
 	str := fmt.Sprintf("#!/bin/bash\nsource %s/miniconda3/etc/profile.d/conda.sh", homeDir)
 	fmt.Fprintln(w, str)
 	str = fmt.Sprintf("conda activate %s\n", config.Environment.Name)
@@ -219,7 +219,7 @@ func (config *TuxivConfig) AddDepTuxivFile(tcloudcli *TcloudCli, args []string) 
 	for i := 0; i < len(config.Environment.Dependencies); i++ {
 		slist := strings.Split(config.Environment.Dependencies[i], "=")
 		deplist := strings.Split(args[0], "=")
-		if deplist[0] == slist[0]{
+		if deplist[0] == slist[0] {
 			fmt.Println("Remove the original dependency %s", config.Environment.Dependencies[i])
 			config.Environment.Dependencies = append(config.Environment.Dependencies[:i], config.Environment.Dependencies[i+1:]...)
 		}

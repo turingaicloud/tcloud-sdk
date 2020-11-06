@@ -42,7 +42,7 @@
     + In this folder, we define all operations of `tcloud command-line`.
     + `tcloudcli.go` defines the concrete operations of CLI subcommands. It packages each operation into `X<func>` functions for calling.
     + `tuxivconfig.go` defines the parsing and env operations upon `tuxiv.conf`, The operations vary in: tuxiv.conf parsing, `<conf_file>` generating and `TACC_env` configuring.
-    + `userconfig.go` defines the user configuration functions for CLI, which are called when initializing CLI.
+    + `userconfig.go` defines the user configuration functions for CLI, which are called when initializing CLI. `userconfig` includes: __UserName__, __SSHpath__ to TACC cluster, __Authfile__ for user to authenticate TACC cluster, __Dir__ defines user's directory in TACC. (By default, Dir[0]=`RepoDir`, Dir[1]=`UserDir`), __path__ is where the file locally stored.
 
 #### How to add a new command(top down view)
 

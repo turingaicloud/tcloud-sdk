@@ -21,7 +21,7 @@ func NewConfigCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 			userName, _ := cmd.Flags().GetString("username")
 			authFile, _ := cmd.Flags().GetString("file")
 
-			// Modify username and authfile, but maintain SSH path. And update userconfig file
+			// Modify username and authfile, but maintain SSH path and Dir. And update userconfig file
 			var config tcloudcli.UserConfig
 			file, err := os.Create(cli.UserConfig("path")[0])
 			defer file.Close()
@@ -32,6 +32,8 @@ func NewConfigCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 			config.UserName = userName
 			config.AuthFile = authFile
 			config.SSHpath = cli.UserConfig("sshpath")
+			config.Dir = cli.UserConfig("dir")
+			config.path = cli.UserConfig("path")[0]
 
 			encoder := json.NewEncoder(file)
 			if err := encoder.Encode(config); err != nil {
