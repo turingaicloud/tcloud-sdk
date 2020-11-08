@@ -34,7 +34,11 @@ type TuxivConfig struct {
 func (config *TuxivConfig) TACCJobEnv(remoteWorkDir string) []string {
 	var strlist []string
 	// TACC Global Env
+	dirlist := strings.Split(remoteWorkDir, "/")
 	strlist = append(strlist, fmt.Sprintf("TACC_WORKDIR=%s", remoteWorkDir))
+	strlist = append(strlist, fmt.Sprintf("TACC_MODELDIR=/home/%s/models/%s/%s", dirlist[-3], dirlist[-2],dirlist[-1]))
+	strlist = append(strlist, fmt.Sprintf("TACC_LOGDIR=/home/%s/logs/%s/%s", dirlist[-3], dirlist[-2],dirlist[-1]))
+	// strlist = append(strlist, fmt.Sprintf("TACC_APPDIR=/home/%s/app/%s/%s", dirlist[-3], dirlist[-2],dirlist[-1]))
 	return strlist
 }
 
