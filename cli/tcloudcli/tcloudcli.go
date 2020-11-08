@@ -60,7 +60,7 @@ func (tcloudcli *TcloudCli) NewSession() *ssh.Session {
 	// TODO(SSHpath[0] to be removed when to one hop)
 	client, err := ssh.Dial("tcp", tcloudcli.userConfig.SSHpath[0]+":22", clientConfig)
 	if err != nil {
-		fmt.Println("Failed to dial: " + err.Error())
+		fmt.Println("Failed to dial: lalallala" + err.Error())
 		return nil
 	}
 	session, err := client.NewSession()
