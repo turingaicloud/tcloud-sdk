@@ -60,7 +60,7 @@ func (tcloudcli *TcloudCli) NewSession() *ssh.Session {
 	// TODO(SSHpath[0] to be removed when to one hop)
 	client, err := ssh.Dial("tcp", tcloudcli.userConfig.SSHpath[0]+":22", clientConfig)
 	if err != nil {
-		fmt.Println("Failed to dial: lalallala" + err.Error())
+		fmt.Println("Failed to dial: " + err.Error())
 		return nil
 	}
 	session, err := client.NewSession()
@@ -320,6 +320,11 @@ func (tcloudcli *TcloudCli) XInit(args ...string) bool {
 			fmt.Println("Failed to receive file at localhost.")
 			return true
 		}
+		cmd = fmt.Sprintf("sinfo")
+		if err := tcloudcli.RemoteExecCmd(cmd); err == true {
+			fmt.Println("Failed to get cluster information: ", err)
+			return true
+		}
 		// TODO(Parse config file and update shell)
 		fmt.Println("User's file configured.")
 		return false
@@ -387,8 +392,8 @@ func (tcloudcli *TcloudCli) XLog(job string, args ...string) bool {
 	dst := fmt.Sprintf(".")
 	IsDir := true
 	if err := tcloudcli.RecvFromCluster(src, dst, IsDir); err == true {
-			fmt.Println("Failed to receive file at localhost.")
-			return true
+		fmt.Println("Failed to receive file at localhost.")
+		return true
 	}
 	return false
 }
