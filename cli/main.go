@@ -15,8 +15,9 @@ var VERSION = "0.0.2"
 func main() {
 	home := homeDIR()
 	// userConfig := tcloudcli.NewUserConfig(filepath.Join(home, ".tcloud", "user.json"), filepath.Join(home, ".tcloud", "TACC.pem"))
+	clusterConfig := tcloudcli.NewClusterConfig(filepath.Join(home, ".tcloud", ".clusterconfig"))
 	userConfig := tcloudcli.NewUserConfig(filepath.Join(home, ".tcloud", ".userconfig"))
-	cli := tcloudcli.NewTcloudCli(userConfig)
+	cli := tcloudcli.NewTcloudCli(userConfig, clusterConfig)
 	tcloudCmd := newTcloudCommand(cli)
 	if err := tcloudCmd.Execute(); err != nil {
 		fmt.Println(err)

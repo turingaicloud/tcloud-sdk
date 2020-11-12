@@ -9,7 +9,6 @@ from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from torch.nn.parallel import DistributedDataParallel
 import os
-torch.multiprocessing.set_start_method('spawn')
 
 def dist_init(host_addr, rank, local_rank, world_size, port=23456):
     host_addr_full = 'tcp://' + host_addr + ':' + str(port)
@@ -34,7 +33,7 @@ class Net(nn.Module):
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return F.log_softmax(x, dim=1)
-    
+
 def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
@@ -69,6 +68,7 @@ def test(args, model, device, test_loader, world_size):
         100. * correct / length))
 
 def main():
+    print("This is a PyTorch Example!!!")
     # Training settings
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
@@ -100,8 +100,13 @@ def main():
     rank = int(os.environ['SLURM_PROCID'])
     local_rank = int(os.environ['SLURM_LOCALID'])
     world_size = int(os.environ['SLURM_NTASKS'])
-    ip = "TACC1"
-
+    def get_ip(iplist):
+        ip = iplist.split('[')[0] + iplist.split('[')[1].split('-')[0]
+        return ip
+    #iplist = os.environ['SLURM_STEP_NODELIST']
+    #ip = get_ip(iplist)
+    ip="gpu02"
+    print(ip, rank, local_rank, world_size)
     dist_init(ip, rank, local_rank, world_size)
     train_dataset = datasets.MNIST('data', train=True, download=True,
                        transform=transforms.Compose([
@@ -111,7 +116,7 @@ def main():
     train_sampler = DistributedSampler(train_dataset, num_replicas=world_size, rank=rank)
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
-        batch_size=args.batch_size, 
+        batch_size=args.batch_size,
         sampler=train_sampler,
         **kwargs)
     test_dataset = datasets.MNIST('data', train=False, transform=transforms.Compose([
@@ -122,8 +127,8 @@ def main():
 
     test_loader = torch.utils.data.DataLoader(
         test_dataset,
-        batch_size=args.test_batch_size, 
-        sampler=test_sampler, 
+        batch_size=args.test_batch_size,
+        sampler=test_sampler,
         **kwargs)
 
     model = Net().to(device)
@@ -136,6 +141,5 @@ def main():
 
     if (args.save_model):
         torch.save(model.state_dict(),"mnist_cnn.pt")
-        
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

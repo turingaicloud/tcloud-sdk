@@ -9,8 +9,7 @@ type UserConfig struct {
 	UserName string   `json:"username"`
 	SSHpath  []string `json:"sshpath"`
 	AuthFile string   `json:"authfile"`
-	Dir      []string `json:"dir"`
-	path     string
+	path     string   `json:"path"`
 }
 
 func NewUserConfig(path string) *UserConfig {

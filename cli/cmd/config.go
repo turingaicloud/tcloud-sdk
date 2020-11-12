@@ -32,8 +32,8 @@ func NewConfigCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 			config.UserName = userName
 			config.AuthFile = authFile
 			config.SSHpath = cli.UserConfig("sshpath")
-			config.Dir = cli.UserConfig("dir")
-			config.path = cli.UserConfig("path")[0]
+			// config.Dir = cli.ClusterConfig("dir")
+			// config.path = cli.UserConfig("path")[0]
 
 			encoder := json.NewEncoder(file)
 			if err := encoder.Encode(config); err != nil {

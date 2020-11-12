@@ -18,6 +18,7 @@ import (
 
 type TcloudCli struct {
 	userConfig *UserConfig
+	clusterConfig *ClusterConfig
 	// sess       *ssh.Session
 	prefix string
 }
@@ -31,12 +32,22 @@ func (tcloudcli *TcloudCli) UserConfig(option string) []string {
 		return append(s, tcloudcli.userConfig.AuthFile)
 	case "sshpath":
 		return tcloudcli.userConfig.SSHpath
-	case "dir":
-		return tcloudcli.userConfig.Dir
 	case "path":
 		return append(s, tcloudcli.userConfig.path)
 	default:
 		fmt.Println("No options found in userconfig")
+		return s
+	}
+}
+func (tcloudcli *TcloudCli) ClusterConfig(option string) []string {
+	var s []string
+	switch strings.ToLower(option) {
+	case "tcloudversion":
+		return append(s, tcloudcli.clusterConfig.TcloudVersion)
+	case "dir":
+		return append(s, tcloudcli.clusterConfig.Dir)
+	default:
+		fmt.Println("No options found in clusterconfig")
 		return s
 	}
 }
@@ -58,7 +69,7 @@ func (tcloudcli *TcloudCli) NewSession() *ssh.Session {
 		},
 	}
 	// TODO(SSHpath[0] to be removed when to one hop)
-	client, err := ssh.Dial("tcp", tcloudcli.userConfig.SSHpath[0]+":22", clientConfig)
+	client, err := ssh.Dial("tcp", tcloudcli.userConfig.SSHpath[0]+":30041", clientConfig)
 	if err != nil {
 		fmt.Println("Failed to dial: " + err.Error())
 		return nil
@@ -93,9 +104,10 @@ func (tcloudcli *TcloudCli) NewPrefix() {
 
 }
 
-func NewTcloudCli(userConfig *UserConfig) *TcloudCli {
+func NewTcloudCli(userConfig *UserConfig, clusterConfig *ClusterConfig) *TcloudCli {
 	tcloudcli := &TcloudCli{
 		userConfig: userConfig,
+		clusterConfig: clusterConfig,
 	}
 	tcloudcli.NewPrefix()
 	return tcloudcli
@@ -144,8 +156,9 @@ func (tcloudcli *TcloudCli) SendRepoToCluster(repoName string, src string) (stri
 
 	// TODO(A bit wrong when transmit file. Not the same directory as src)
 	dst := tcloudcli.userConfig.SSHpath[0]
-	dst = fmt.Sprintf("%s@%s:/home/%s/%s", tcloudcli.userConfig.UserName, dst, tcloudcli.userConfig.UserName, tcloudcli.userConfig.Dir[0])
-	cmd := exec.Command("scp", prefix, "-i", tcloudcli.userConfig.AuthFile, src, dst)
+	dst = fmt.Sprintf("%s@%s:/mnt/sharefs/home/%s/%s", tcloudcli.userConfig.UserName, dst, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dir)
+	cmd := exec.Command("scp", "-P", "30041", prefix, "-i", tcloudcli.userConfig.AuthFile, src, dst)
+	fmt.Println(cmd)
 	if _, err := cmd.CombinedOutput(); err != nil {
 		fmt.Println("Failed to run cmd in SendRepoToCluster ", err)
 		return dst, true
@@ -153,10 +166,10 @@ func (tcloudcli *TcloudCli) SendRepoToCluster(repoName string, src string) (stri
 	if len(tcloudcli.userConfig.SSHpath) < 2 {
 		return dst, false
 	} else if len(tcloudcli.userConfig.SSHpath) == 2 {
-		src := fmt.Sprintf("/home/%s/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.userConfig.Dir[0], repoName)
+		src := fmt.Sprintf("/mnt/sharefs/home/%s/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dir, repoName)
 		dst := tcloudcli.userConfig.SSHpath[1]
-		dst = fmt.Sprintf("%s@%s:/home/%s/%s", tcloudcli.userConfig.UserName, dst, tcloudcli.userConfig.UserName, tcloudcli.userConfig.Dir[0])
-		cmd := shellquote.Join("scp", prefix, src, dst)
+		dst = fmt.Sprintf("%s@%s:/mnt/sharefs/home/%s/%s", tcloudcli.userConfig.UserName, dst, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dir)
+		cmd := shellquote.Join("scp", "-P", "30041", prefix, src, dst)
 		if err := tcloudcli.RemoteExecCmd(cmd); err == true {
 			fmt.Println("Failed to send repo from Host:", tcloudcli.userConfig.SSHpath[0], " to Host:", tcloudcli.userConfig.SSHpath[1])
 			return dst, true
@@ -220,7 +233,7 @@ func (tcloudcli *TcloudCli) UploadRepo(repoName string, localWorkDir string) boo
 	return false
 }
 func (tcloudcli *TcloudCli) CondaCreate(repoName string, envName string, randString string) bool {
-	homeDir := fmt.Sprintf("/home/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.userConfig.Dir[0])
+	homeDir := fmt.Sprintf("/mnt/sharefs/home/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dir)
 	condaBin := fmt.Sprintf("%s/miniconda3/bin/conda", homeDir)
 	condaYaml := fmt.Sprintf("%s/%s/configurations/conda.yaml", homeDir, repoName)
 	cmd := fmt.Sprintf("%s %s env create -f %s -n %s\n", tcloudcli.prefix, condaBin, condaYaml, envName+randString)
@@ -233,7 +246,7 @@ func (tcloudcli *TcloudCli) CondaCreate(repoName string, envName string, randStr
 	return false
 }
 func (tcloudcli *TcloudCli) CondaRemove(envName string, randString string) bool {
-	homeDir := fmt.Sprintf("/home/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.userConfig.Dir[0])
+	homeDir := fmt.Sprintf("/mnt/sharefs/home/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dir)
 	condaBin := fmt.Sprintf("%s/miniconda3/bin/conda", homeDir)
 	cmd := fmt.Sprintf("%s %s remove -n %s --all -y", tcloudcli.prefix, condaBin, envName+randString)
 	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
@@ -277,7 +290,7 @@ func (tcloudcli *TcloudCli) XSubmit(args ...string) bool {
 	} else {
 		repoName = args[0]
 	}
-	homeDir := fmt.Sprintf("/home/%s/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.userConfig.Dir[0], repoName)
+	homeDir := fmt.Sprintf("/mnt/sharefs/home/%s/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dir, repoName)
 	cmd := fmt.Sprintf("%s sbatch %s/configurations/run.slurm", tcloudcli.prefix, homeDir)
 	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
 		fmt.Println("Failed to run cmd in tcloud submit: ", err)
@@ -306,7 +319,7 @@ func (tcloudcli *TcloudCli) XInit(args ...string) bool {
 	// TODO(config file path)
 	if len(args) == 1 {
 		// Remote receive config file
-		src := fmt.Sprintf("/home/%s/%s/main.go", tcloudcli.userConfig.UserName, args[0])
+		src := fmt.Sprintf("/mnt/sharefs/home/%s/%s/main.go", tcloudcli.userConfig.UserName, args[0])
 		dst := fmt.Sprintf("%s", filepath.Join(os.Getenv("HOME"), ".tcloud"))
 		IsDir := false
 
@@ -388,7 +401,7 @@ func (tcloudcli *TcloudCli) XLog(job string, args ...string) bool {
 	// TODO: Define a section in tuxiv.conf for log file path to download
 	// logPath := tcloud.userConfig.LogPath
 	logPath := "logs"
-	src := fmt.Sprintf("/home/%s/%s", tcloudcli.userConfig.UserName, logPath)
+	src := fmt.Sprintf("/mnt/sharefs/home/%s/%s", tcloudcli.userConfig.UserName, logPath)
 	dst := fmt.Sprintf(".")
 	IsDir := true
 	if err := tcloudcli.RecvFromCluster(src, dst, IsDir); err == true {

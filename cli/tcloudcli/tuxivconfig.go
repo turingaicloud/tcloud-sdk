@@ -35,10 +35,11 @@ func (config *TuxivConfig) TACCJobEnv(remoteWorkDir string) []string {
 	var strlist []string
 	// TACC Global Env
 	dirlist := strings.Split(remoteWorkDir, "/")
+	length := len(dirlist)
 	strlist = append(strlist, fmt.Sprintf("TACC_WORKDIR=%s", remoteWorkDir))
-	strlist = append(strlist, fmt.Sprintf("TACC_MODELDIR=/home/%s/models/%s/%s", dirlist[-3], dirlist[-2],dirlist[-1]))
-	strlist = append(strlist, fmt.Sprintf("TACC_LOGDIR=/home/%s/logs/%s/%s", dirlist[-3], dirlist[-2],dirlist[-1]))
-	// strlist = append(strlist, fmt.Sprintf("TACC_APPDIR=/home/%s/app/%s/%s", dirlist[-3], dirlist[-2],dirlist[-1]))
+	strlist = append(strlist, fmt.Sprintf("TACC_MODELDIR=/mnt/sharefs/home/%s/models/%s/%s", dirlist[length-3], dirlist[length-2], dirlist[length-1]))
+	strlist = append(strlist, fmt.Sprintf("TACC_LOGDIR=/mnt/sharefs/home/%s/logs/%s/%s", dirlist[length-3], dirlist[length-2],dirlist[length-1]))
+	// strlist = append(strlist, fmt.Sprintf("TACC_APPDIR=/mnt/sharefs/home/%s/app/%s/%s", dirlist[-3], dirlist[-2],dirlist[-1]))
 	return strlist
 }
 
@@ -47,6 +48,7 @@ func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, args []string) (
 	var localConfDir, localWorkDir string
 	var remoteWorkDir string
 	// var remoteConfDir string
+	fmt.Println("start parsing tuxiv.conf")
 	var repoName string
 	if len(args) < 1 {
 		tuxivFile = "tuxiv.conf"
@@ -54,15 +56,16 @@ func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, args []string) (
 		localConfDir = filepath.Join(localWorkDir, "configurations")
 		dirlist := strings.Split(localWorkDir, "/")
 		repoName = dirlist[len(dirlist)-1]
-		remoteWorkDir = fmt.Sprintf("/home/%s/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.userConfig.Dir[0], repoName)
+		remoteWorkDir = fmt.Sprintf("/mnt/sharefs/home/%s/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dir, repoName)
 		// remoteConfDir = filepath.Join(remoteWorkDir, "configurations")
 	} else {
+		fmt.Println("args is %s", args)
 		tuxivFile = args[0]
 		localWorkDir, _ = filepath.Abs(path.Dir(tuxivFile))
 		localConfDir = filepath.Join(localWorkDir, "configurations")
 		dirlist := strings.Split(localWorkDir, "/")
 		repoName = dirlist[len(dirlist)-1]
-		remoteWorkDir = fmt.Sprintf("/home/%s/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.userConfig.Dir[0], repoName)
+		remoteWorkDir = fmt.Sprintf("/mnt/sharefs/home/%s/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dir, repoName)
 		// remoteConfDir = filepath.Join(remoteWorkDir, "configurations")
 	}
 
@@ -190,7 +193,7 @@ func (config *TuxivConfig) RunshFile(tcloudcli *TcloudCli, localWorkDir string) 
 	defer f.Close()
 
 	w := bufio.NewWriter(f)
-	homeDir := fmt.Sprintf("/home/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.userConfig.Dir[0])
+	homeDir := fmt.Sprintf("/mnt/sharefs/home/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dir)
 	str := fmt.Sprintf("#!/bin/bash\nsource %s/miniconda3/etc/profile.d/conda.sh", homeDir)
 	fmt.Fprintln(w, str)
 	str = fmt.Sprintf("conda activate %s\n", config.Environment.Name)
