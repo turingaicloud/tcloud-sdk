@@ -189,9 +189,9 @@ func (tcloudcli *TcloudCli) RecvFromCluster(src string, dst string, IsDir bool) 
 
 	var cmd *exec.Cmd
 	if IsDir {
-		cmd = exec.Command("scp", "-r", "-i", tcloudcli.userConfig.AuthFile, srcPath, dstPath)
+		cmd = exec.Command("scp", "-P", "30041", "-r", "-i", tcloudcli.userConfig.AuthFile, srcPath, dstPath)
 	} else {
-		cmd = exec.Command("scp", "-i", tcloudcli.userConfig.AuthFile, srcPath, dstPath)
+		cmd = exec.Command("scp", "-P", "30041", "-i", tcloudcli.userConfig.AuthFile, srcPath, dstPath)
 	}
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
@@ -236,7 +236,8 @@ func (tcloudcli *TcloudCli) CondaCreate(repoName string, envName string, randStr
 	homeDir := fmt.Sprintf("/mnt/sharefs/home/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dir)
 	condaBin := fmt.Sprintf("%s/miniconda3/bin/conda", homeDir)
 	condaYaml := fmt.Sprintf("%s/%s/configurations/conda.yaml", homeDir, repoName)
-	cmd := fmt.Sprintf("%s %s env create -f %s -n %s\n", tcloudcli.prefix, condaBin, condaYaml, envName+randString)
+	// cmd := fmt.Sprintf("%s %s env create -f %s -n %s\n", tcloudcli.prefix, condaBin, condaYaml, envName+randString)
+	cmd := fmt.Sprintf("%s %s env create -f %s -n %s\n", tcloudcli.prefix, condaBin, condaYaml, envName)
 	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
 		fmt.Println("Failed to run cmd in CondaCreate ", err)
 		return true
@@ -248,7 +249,8 @@ func (tcloudcli *TcloudCli) CondaCreate(repoName string, envName string, randStr
 func (tcloudcli *TcloudCli) CondaRemove(envName string, randString string) bool {
 	homeDir := fmt.Sprintf("/mnt/sharefs/home/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dir)
 	condaBin := fmt.Sprintf("%s/miniconda3/bin/conda", homeDir)
-	cmd := fmt.Sprintf("%s %s remove -n %s --all -y", tcloudcli.prefix, condaBin, envName+randString)
+	// cmd := fmt.Sprintf("%s %s remove -n %s --all -y", tcloudcli.prefix, condaBin, envName+randString)
+	cmd := fmt.Sprintf("%s %s remove -n %s --all -y", tcloudcli.prefix, condaBin, envName)
 	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
 		fmt.Println("Failed to run cmd in CondaRemove ", err)
 		return true
@@ -389,7 +391,7 @@ func (tcloudcli *TcloudCli) XInstall(args ...string) bool {
 	fmt.Println("Environment \"", config.Environment.Name, "\" created locally.")
 	return false
 }
-func (tcloudcli *TcloudCli) XLog(job string, args ...string) bool {
+func (tcloudcli *TcloudCli) XLog(job string, downloadPath string, args ...string) bool {
 	var cmd string
 	fmt.Println("job id is:", job)
 	cmd = fmt.Sprintf("%s cat slurm-%s.out", tcloudcli.prefix, job)
@@ -399,14 +401,15 @@ func (tcloudcli *TcloudCli) XLog(job string, args ...string) bool {
 	}
 	// Download the logs of tensorboard or other log files
 	// TODO: Define a section in tuxiv.conf for log file path to download
-	// logPath := tcloud.userConfig.LogPath
-	logPath := "logs"
-	src := fmt.Sprintf("/mnt/sharefs/home/%s/%s", tcloudcli.userConfig.UserName, logPath)
-	dst := fmt.Sprintf(".")
-	IsDir := true
-	if err := tcloudcli.RecvFromCluster(src, dst, IsDir); err == true {
-		fmt.Println("Failed to receive file at localhost.")
-		return true
+	if downloadPath != "" {
+		fmt.Println("Download file from USERDIR")
+		src := fmt.Sprintf("/mnt/sharefs/home/%s/USERDIR/%s", tcloudcli.userConfig.UserName, downloadPath)
+		dst := fmt.Sprintf(".")
+		IsDir := true
+		if err := tcloudcli.RecvFromCluster(src, dst, IsDir); err == true {
+			fmt.Println("Failed to receive file at localhost.")
+			return true
+		}
 	}
 	return false
 }

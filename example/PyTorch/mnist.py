@@ -8,6 +8,7 @@ from torchvision import datasets, transforms
 from torch.utils.data import Dataset, DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from torch.nn.parallel import DistributedDataParallel
+from torch.utils.tensorboard import SummaryWriter
 import os
 
 def dist_init(host_addr, rank, local_rank, world_size, port=23456):
@@ -69,6 +70,8 @@ def test(args, model, device, test_loader, world_size):
 
 def main():
     print("This is a PyTorch Example!!!")
+    # tensorboard summary
+    writer = SummaryWriter()
     # Training settings
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
@@ -103,9 +106,9 @@ def main():
     def get_ip(iplist):
         ip = iplist.split('[')[0] + iplist.split('[')[1].split('-')[0]
         return ip
-    #iplist = os.environ['SLURM_STEP_NODELIST']
-    #ip = get_ip(iplist)
-    ip="gpu02"
+    iplist = os.environ['SLURM_JOB_NODELIST']
+    ip = get_ip(iplist)
+    # ip="gpu02"
     print(ip, rank, local_rank, world_size)
     dist_init(ip, rank, local_rank, world_size)
     train_dataset = datasets.MNIST('data', train=True, download=True,

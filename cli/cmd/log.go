@@ -9,14 +9,17 @@ func NewLogCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "log",
 		Short: "Check submitted jobs' log",
-		Args:  cobra.MaximumNArgs(1),
+		Args:  cobra.MaximumNArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
 			job, _ := cmd.Flags().GetString("job")
-			cli.XLog(job, args...)
+			downloadPath, _ := cmd.Flags().GetString("filepath")
+			cli.XLog(job, downloadPath, args...)
 		},
 	}
 
 	var job string
-	cmd.Flags().StringVarP(&job, "job", "j", "", "Show <JOB_ID> status")
+	cmd.Flags().StringVarP(&job, "job", "j", "", "Show <JOB_ID> log")
+	var downloadPath string
+	cmd.Flags().StringVarP(&downloadPath, "filepath", "f", "", "Download file in user directory")
 	return cmd
 }
