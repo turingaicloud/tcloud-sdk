@@ -204,25 +204,24 @@ func (tcloudcli *TcloudCli) RecvFromCluster(src string, dst string, IsDir bool) 
 
 func (tcloudcli *TcloudCli) BuildEnv(args ...string) map[string]string {
 	var config TuxivConfig
-	// localWorkDir, repoName, TACCDir, err := config.ParseTuxivConf(tcloudcli, args)
-	_, _, TACCDir, err := config.ParseTuxivConf(tcloudcli, args)
-	// randString := RandString(16)
+	localWorkDir, repoName, TACCDir, err := config.ParseTuxivConf(tcloudcli, args)
+	randString := RandString(16)
 	if err == true {
 		fmt.Println("Parse tuxiv config file failed.")
 		os.Exit(-1)
 	}
-	// if err = tcloudcli.UploadRepo(repoName, localWorkDir); err == true {
-	// 	fmt.Println("Upload repository env failed")
-	// 	os.Exit(-1)
-	// }
-	// if err = tcloudcli.CondaRemove(config.Environment.Name, randString); err == true {
-	// 	fmt.Println("Remove conda env failed")
-	// 	os.Exit(-1)
-	// }
-	// if err = tcloudcli.CondaCreate(repoName, config.Environment.Name, randString); err == true {
-	// 	fmt.Println("Create conda env failed")
-	// 	os.Exit(-1)
-	// }
+	if err = tcloudcli.UploadRepo(repoName, localWorkDir); err == true {
+		fmt.Println("Upload repository env failed")
+		os.Exit(-1)
+	}
+	if err = tcloudcli.CondaRemove(config.Environment.Name, randString); err == true {
+		fmt.Println("Remove conda env failed")
+		os.Exit(-1)
+	}
+	if err = tcloudcli.CondaCreate(repoName, config.Environment.Name, randString); err == true {
+		fmt.Println("Create conda env failed")
+		os.Exit(-1)
+	}
 	return TACCDir
 }
 
