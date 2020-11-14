@@ -298,17 +298,7 @@ func (tcloudcli *TcloudCli) XSubmit(args ...string) bool {
 	cmd := fmt.Sprintf("%s sbatch %s/configurations/run.slurm", tcloudcli.prefix, homeDir)
 
 	// Create `RUNDIR` in remote and run cmd at `RUNDIR`
-	var RUNDIR string
-	if _, ok := TACCDir["TACC_LOGDIR"]; ok {
-		// TODO(Will there be error if ${TACC_WORKDIR} contains '$TACC_USERDIR')
-		RUNDIR = strings.ReplaceAll(TACCDir["TACC_LOGDIR"], "${TACC_WORKDIR}", TACCDir["TACC_WORKDIR"])
-		RUNDIR = strings.ReplaceAll(RUNDIR, "$TACC_WORKDIR", TACCDir["TACC_WORKDIR"])
-		RUNDIR = strings.ReplaceAll(RUNDIR, "${TACC_USERDIR}", TACCDir["TACC_USERDIR"])
-		RUNDIR = strings.ReplaceAll(RUNDIR, "$TACC_USERDIR", TACCDir["TACC_USERDIR"])
-	} else {
-		RUNDIR = TACCDir["TACC_WORKDIR"]
-	}
-	cmd = fmt.Sprintf("mkdir -p %s && cd %s && %s", RUNDIR, RUNDIR, cmd)
+	cmd = fmt.Sprintf("mkdir -p %s && cd %s && %s", TACCDir["TACC_WORKDIR"], TACCDir["TACC_WORKDIR"], cmd)
 	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
 		fmt.Println("Failed to run cmd in tcloud submit: ", err)
 		return true

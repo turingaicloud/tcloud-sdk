@@ -6,7 +6,7 @@ import tensorflow as tf
 import re
 import os
 
-def tf_config_from_slurm(ps_number, port_number=2222):
+def tf_config_from_slurm(ps_number, port_number=12222):
     """
     Creates configuration for a distributed tensorflow session 
     from environment variables  provided by the Slurm cluster

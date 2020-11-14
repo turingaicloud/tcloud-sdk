@@ -43,14 +43,6 @@ func (config *TuxivConfig) TACCJobEnv(remoteWorkDir string, remoteUserDir string
 	TACCDir["TACC_WORKDIR"] = remoteWorkDir
 	strlist = append(strlist, fmt.Sprintf("TACC_USERDIR=%s", remoteUserDir))
 	TACCDir["TACC_USERDIR"] = remoteUserDir
-	// if config.Job.Model != "" {
-	// 	strlist = append(strlist, fmt.Sprintf("TACC_MODELDIR=%s", config.Job.Model))
-	// 	TACCDir["TACC_MODELDIR"] = config.Job.Model
-	// }
-	if config.Job.Log != "" {
-		strlist = append(strlist, fmt.Sprintf("TACC_LOGDIR=%s", config.Job.Log))
-		TACCDir["TACC_LOGDIR"] = config.Job.Log
-	}
 	return strlist, TACCDir
 }
 
