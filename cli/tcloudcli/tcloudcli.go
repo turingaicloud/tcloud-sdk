@@ -452,7 +452,7 @@ func (tcloudcli *TcloudCli) XDownload(IsDir bool, args ...string) bool {
 
 // Only allow remote workdir copy to remote userdir
 // Src must contain repoName first
-func (tcloudcli *TcloudCli) XCopy(IsDir bool, args ...string) bool {
+func (tcloudcli *TcloudCli) XCP(IsDir bool, args ...string) bool {
 	var src, dst, remotesrc, remotedst string
 	src = args[0]
 	dst = args[1]

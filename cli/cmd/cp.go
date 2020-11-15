@@ -7,12 +7,12 @@ import (
 
 func NewCopyCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "copy",
+		Use:   "cp",
 		Short: "Copy file/directory to user's directory",
 		Args:  cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
 			IsDir, _ := cmd.Flags().GetBool("recursive")
-			cli.XCopy(IsDir, args...)
+			cli.XCP(IsDir, args...)
 		},
 	}
 	var IsDir bool
