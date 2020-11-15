@@ -498,7 +498,7 @@ func (tcloudcli *TcloudCli) XCP(IsDir bool, args ...string) bool {
 	return false
 }
 
-func (tcloudcli *TcloudCli) XLS(IsLong bool, IsReverse bool, args ...string) bool {
+func (tcloudcli *TcloudCli) XLS(IsLong bool, IsReverse bool, IsAll bool, args ...string) bool {
 	var src, flags string
 	src = args[0]
 	flags = ""
@@ -507,6 +507,9 @@ func (tcloudcli *TcloudCli) XLS(IsLong bool, IsReverse bool, args ...string) boo
 	}
 	if IsReverse {
 		flags += " -r"
+	}
+	if IsAll {
+		flags += " -a"
 	}
 
 	remoteUserDir := fmt.Sprintf("/mnt/sharefs/home/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
