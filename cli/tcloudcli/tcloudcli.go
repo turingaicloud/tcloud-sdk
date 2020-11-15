@@ -497,3 +497,26 @@ func (tcloudcli *TcloudCli) XCopy(IsDir bool, args ...string) bool {
 	}
 	return false
 }
+
+func (tcloudcli *TcloudCli) XLS(IsLong bool, IsReverse bool, args ...string) bool {
+	var src, flags string
+	src = args[0]
+	flags = ""
+	if IsLong {
+		flags += " -l"
+	}
+	if IsReverse {
+		flags += " -r"
+	}
+
+	remoteUserDir := fmt.Sprintf("/mnt/sharefs/home/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
+	remote := fmt.Sprintf("%s/%s", remoteUserDir, src)
+
+	cmd := fmt.Sprintf("ls %s %s", flags, remote)
+	// fmt.Println(cmd)
+	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
+		fmt.Printf("Failed to ls%s %s\n", flags, remote)
+		return true
+	}
+	return false
+}

@@ -40,6 +40,7 @@ func newTcloudCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 	tcloudCmd.AddCommand(cmd.NewInstallCommand(cli))
 	// tcloudCmd.AddCommand(cmd.NewLogCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewCopyCommand(cli))
+	tcloudCmd.AddCommand(cmd.NewLSCommand(cli))
 
 	var Verbose bool
 	tcloudCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
