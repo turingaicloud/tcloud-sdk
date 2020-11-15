@@ -62,7 +62,7 @@ func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, args []string) (
 		dirlist := strings.Split(localWorkDir, "/")
 		repoName = dirlist[len(dirlist)-1]
 		remoteWorkDir = fmt.Sprintf("/mnt/sharefs/home/%s/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"], repoName)
-		remoteUserDir = fmt.Sprintf("/mnt/sharefs/home/%s/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"], repoName)
+		remoteUserDir = fmt.Sprintf("/mnt/sharefs/home/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
 		// remoteConfDir = filepath.Join(remoteWorkDir, "configurations")
 	} else {
 		// fmt.Println("args is", args)

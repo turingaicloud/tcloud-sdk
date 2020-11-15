@@ -27,9 +27,9 @@ func main() {
 
 func newTcloudCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 	var tcloudCmd = &cobra.Command{
-		Use:     "tcloud",
-		Short:   "TACC Command-line Interface v" + VERSION,
-		Version: VERSION,
+		Use:   "tcloud",
+		Short: "TACC Command-line Interface v" + VERSION,
+		// Version: VERSION,
 	}
 	tcloudCmd.AddCommand(cmd.NewSubmitCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewConfigCommand(cli))
@@ -38,7 +38,8 @@ func newTcloudCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 	tcloudCmd.AddCommand(cmd.NewDownloadCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewAddCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewInstallCommand(cli))
-	tcloudCmd.AddCommand(cmd.NewLogCommand(cli))
+	// tcloudCmd.AddCommand(cmd.NewLogCommand(cli))
+	tcloudCmd.AddCommand(cmd.NewCopyCommand(cli))
 
 	var Verbose bool
 	tcloudCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")

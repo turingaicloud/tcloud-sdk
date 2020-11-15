@@ -353,14 +353,15 @@ func (tcloudcli *TcloudCli) XInit(args ...string) bool {
 	return true
 }
 
-func (tcloudcli *TcloudCli) XDownload(args ...string) bool {
-	cmd := exec.Command("wget", args[0])
-	if _, err := cmd.CombinedOutput(); err != nil {
-		fmt.Println("Failed to wget", args[0])
-		return true
-	}
-	return false
-}
+// func (tcloudcli *TcloudCli) XDownload(args ...string) bool {
+// 	cmd := exec.Command("wget", args[0])
+// 	if _, err := cmd.CombinedOutput(); err != nil {
+// 		fmt.Println("Failed to wget", args[0])
+// 		return true
+// 	}
+// 	return false
+// }
+
 func (tcloudcli *TcloudCli) XAdd(args ...string) bool {
 	// Add new dependency to tuxiv.conf
 	var config TuxivConfig
@@ -396,23 +397,101 @@ func (tcloudcli *TcloudCli) XInstall(args ...string) bool {
 	fmt.Println("Environment \"", config.Environment.Name, "\" created locally.")
 	return false
 }
-func (tcloudcli *TcloudCli) XLog(job string, downloadPath string, args ...string) bool {
-	var cmd string
-	fmt.Println("job id is:", job)
-	cmd = fmt.Sprintf("%s cat slurm-%s.out", tcloudcli.prefix, job)
-	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
-		fmt.Println("Failed to run cmd in tcloud log.")
-		return true
+
+// func (tcloudcli *TcloudCli) XLog(job string, downloadPath string, IsDir bool, args ...string) bool {
+func (tcloudcli *TcloudCli) XDownload(IsDir bool, args ...string) bool {
+	// var cmd string
+	// fmt.Println("job id is:", job)
+	// cmd = fmt.Sprintf("%s cat slurm-%s.out", tcloudcli.prefix, job)
+	// if err := tcloudcli.RemoteExecCmd(cmd); err == true {
+	// 	fmt.Println("Failed to run cmd in tcloud log.")
+	// 	return true
+	// }
+	// // Download the logs of tensorboard or other log files
+	// if downloadPath != "" {
+	// 	fmt.Println("Download file from USERDIR")
+	// 	src := fmt.Sprintf("/mnt/sharefs/home/%s/USERDIR/%s", tcloudcli.userConfig.UserName, downloadPath)
+	// 	dst := fmt.Sprintf(".")
+	// 	IsDir := true
+	// 	if err := tcloudcli.RecvFromCluster(src, dst, IsDir); err == true {
+	// 		fmt.Println("Failed to receive file at localhost.")
+	// 		return true
+	// 	}
+	// }
+	var src, dst, remotesrc string
+	src = args[0]
+	if len(args) > 1 {
+		dst = args[1]
+	} else {
+		dst = "."
 	}
-	// Download the logs of tensorboard or other log files
-	// TODO: Define a section in tuxiv.conf for log file path to download
-	if downloadPath != "" {
-		fmt.Println("Download file from USERDIR")
-		src := fmt.Sprintf("/mnt/sharefs/home/%s/USERDIR/%s", tcloudcli.userConfig.UserName, downloadPath)
-		dst := fmt.Sprintf(".")
-		IsDir := true
-		if err := tcloudcli.RecvFromCluster(src, dst, IsDir); err == true {
-			fmt.Println("Failed to receive file at localhost.")
+
+	// Format src, dst
+	if src[0:1] == "./" {
+		remotesrc = src[2:]
+	} else if src[0] == '/' {
+		remotesrc = src[1:]
+	} else {
+		remotesrc = src
+	}
+
+	remoteUserDir := fmt.Sprintf("/mnt/sharefs/home/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
+	remotesrc = fmt.Sprintf("%s/%s", remoteUserDir, remotesrc)
+
+	if err := tcloudcli.RecvFromCluster(remotesrc, dst, IsDir); err {
+		if IsDir {
+			fmt.Printf("Failed to receive directory %s to %s.", src, dst)
+			return true
+		} else {
+			fmt.Printf("Failed to receive file %s to %s.", src, dst)
+			return true
+		}
+	}
+	return false
+}
+
+// Only allow remote workdir copy to remote userdir
+// Src must contain repoName first
+func (tcloudcli *TcloudCli) XCopy(IsDir bool, args ...string) bool {
+	var src, dst, remotesrc, remotedst string
+	src = args[0]
+	dst = args[1]
+
+	// Format src, dst
+	if src[0:1] == "./" {
+		remotesrc = src[2:]
+	} else if src[0] == '/' {
+		remotesrc = src[1:]
+	} else {
+		remotesrc = src
+	}
+
+	if dst[0:1] == "./" {
+		remotedst = dst[2:]
+	} else if dst[0] == '/' {
+		remotedst = dst[1:]
+	} else {
+		remotedst = dst
+	}
+
+	remoteWorkDir := fmt.Sprintf("/mnt/sharefs/home/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"])
+	remoteUserDir := fmt.Sprintf("/mnt/sharefs/home/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
+	remotesrc = fmt.Sprintf("%s/%s", remoteWorkDir, remotesrc)
+	remotedst = fmt.Sprintf("%s/%s", remoteUserDir, remotedst)
+
+	// mkdir -p && cp src dst
+	if IsDir {
+		cmd := fmt.Sprintf("cp -r %s %s", remotesrc, remotedst)
+		// fmt.Println(cmd)
+		if err := tcloudcli.RemoteExecCmd(cmd); err == true {
+			fmt.Printf("Failed to copy %s to %s\n", src, dst)
+			return true
+		}
+	} else {
+		cmd := fmt.Sprintf("mkdir -p %s && cp %s %s", remotedst, remotesrc, remotedst)
+		// fmt.Println(cmd)
+		if err := tcloudcli.RemoteExecCmd(cmd); err == true {
+			fmt.Printf("Failed to copy %s to %s\n", src, dst)
 			return true
 		}
 	}
