@@ -235,10 +235,11 @@ func (tcloudcli *TcloudCli) UploadRepo(repoName string, localWorkDir string) boo
 	return false
 }
 func (tcloudcli *TcloudCli) CondaCreate(repoName string, envName string, randString string) bool {
-	homeDir := fmt.Sprintf("/mnt/sharefs/home/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"])
-	condaBin := fmt.Sprintf("%s/miniconda3/bin/conda", homeDir)
-	condaYaml := fmt.Sprintf("%s/%s/configurations/conda.yaml", homeDir, repoName)
+	homeDir := fmt.Sprintf("/mnt/sharefs/home/%s", tcloudcli.userConfig.UserName)
+	condaBin := fmt.Sprintf("%s/.Miniconda3/bin/conda", homeDir)
+	condaYaml := fmt.Sprintf("%s/%s/%s/configurations/conda.yaml", homeDir, tcloudcli.clusterConfig.Dirs["workdir"], repoName)
 	// cmd := fmt.Sprintf("%s %s env create -f %s -n %s\n", tcloudcli.prefix, condaBin, condaYaml, envName+randString)
+	fmt.Println(condaYaml)
 	cmd := fmt.Sprintf("%s %s env create -f %s -n %s\n", tcloudcli.prefix, condaBin, condaYaml, envName)
 	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
 		fmt.Println("Failed to run cmd in CondaCreate ", err)
@@ -249,8 +250,8 @@ func (tcloudcli *TcloudCli) CondaCreate(repoName string, envName string, randStr
 	return false
 }
 func (tcloudcli *TcloudCli) CondaRemove(envName string, randString string) bool {
-	homeDir := fmt.Sprintf("/mnt/sharefs/home/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"])
-	condaBin := fmt.Sprintf("%s/miniconda3/bin/conda", homeDir)
+	homeDir := fmt.Sprintf("/mnt/sharefs/home/%s", tcloudcli.userConfig.UserName)
+	condaBin := fmt.Sprintf("%s/.Miniconda3/bin/conda", homeDir)
 	// cmd := fmt.Sprintf("%s %s remove -n %s --all -y", tcloudcli.prefix, condaBin, envName+randString)
 	cmd := fmt.Sprintf("%s %s remove -n %s --all -y", tcloudcli.prefix, condaBin, envName)
 	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
@@ -285,6 +286,16 @@ func RandString(n int) string {
 	return sb.String()
 }
 func (tcloudcli *TcloudCli) XSubmit(args ...string) bool {
+	cmd := fmt.Sprintf("mkdir -p  /mnt/sharefs/home/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"])
+	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
+		fmt.Println("Failed to workdir ", err)
+		return true
+	}
+	cmd = fmt.Sprintf("mkdir -p  /mnt/sharefs/home/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
+	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
+		fmt.Println("Failed to userdir ", err)
+		return true
+	}
 	TACCDir := tcloudcli.BuildEnv(args...)
 	repoName := ""
 	if len(args) < 1 || args[0] == "." {
@@ -295,7 +306,7 @@ func (tcloudcli *TcloudCli) XSubmit(args ...string) bool {
 		repoName = args[0]
 	}
 	homeDir := fmt.Sprintf("/mnt/sharefs/home/%s/%s/%s", tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"], repoName)
-	cmd := fmt.Sprintf("%s sbatch %s/configurations/run.slurm", tcloudcli.prefix, homeDir)
+	cmd = fmt.Sprintf("%s sbatch %s/configurations/run.slurm", tcloudcli.prefix, homeDir)
 
 	// Create `RUNDIR` in remote and run cmd at `RUNDIR`
 	cmd = fmt.Sprintf("mkdir -p %s && cd %s && %s", TACCDir["TACC_WORKDIR"], TACCDir["TACC_WORKDIR"], cmd)

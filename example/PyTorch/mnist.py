@@ -10,6 +10,10 @@ from torch.utils.data.distributed import DistributedSampler
 from torch.nn.parallel import DistributedDataParallel
 from torch.utils.tensorboard import SummaryWriter
 import os
+import re
+import shutil
+# tensorboard summary
+writer = SummaryWriter()
 
 def dist_init(host_addr, rank, local_rank, world_size, port=23456):
     host_addr_full = 'tcp://' + host_addr + ':' + str(port)
@@ -45,11 +49,12 @@ def train(args, model, device, train_loader, optimizer, epoch):
         loss.backward()
         optimizer.step()
         if batch_idx % args.log_interval == 0:
+            writer.add_scalar('Loss/train', loss.item(), batch_idx+epoch*len(train_loader))
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
 
-def test(args, model, device, test_loader, world_size):
+def test(args, model, device, test_loader, world_size, epoch):
     model.eval()
     test_loss = 0
     correct = 0
@@ -63,18 +68,17 @@ def test(args, model, device, test_loader, world_size):
             correct += pred.eq(target.view_as(pred)).sum().item()
 
     test_loss /= length
-
+    writer.add_scalar('Accuracy/test', 100. * correct / length, epoch)
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, length,
         100. * correct / length))
 
 def main():
     print("This is a PyTorch Example!!!")
-    # tensorboard summary
-    writer = SummaryWriter()
     # Training settings
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
-    parser.add_argument('--batch-size', type=int, default=64, metavar='N',
+    parser.add_argument('--batch-size', type=int, default=256, metavar='N',
                         help='input batch size for training (default: 64)')
     parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
                         help='input batch size for testing (default: 1000)')
@@ -99,19 +103,19 @@ def main():
 
     device = torch.device("cuda" if use_cuda else "cpu")
 
-    kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
+    kwargs = {'num_workers': 2, 'pin_memory': True} if use_cuda else {}
     rank = int(os.environ['SLURM_PROCID'])
     local_rank = int(os.environ['SLURM_LOCALID'])
     world_size = int(os.environ['SLURM_NTASKS'])
     def get_ip(iplist):
-        ip = iplist.split('[')[0] + iplist.split('[')[1].split('-')[0]
+        ip = iplist.split('[')[0] +re.split("-|,", iplist.split('[')[1])[0]
         return ip
     iplist = os.environ['SLURM_JOB_NODELIST']
     ip = get_ip(iplist)
     # ip="gpu02"
     print(ip, rank, local_rank, world_size)
     dist_init(ip, rank, local_rank, world_size)
-    train_dataset = datasets.MNIST('data', train=True, download=True,
+    train_dataset = datasets.MNIST('data', train=True, download=False,
                        transform=transforms.Compose([
                            transforms.ToTensor(),
                            transforms.Normalize((0.1307,), (0.3081,))
@@ -140,9 +144,19 @@ def main():
 
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
-        test(args, model, device, test_loader, world_size)
+        test(args, model, device, test_loader, world_size, epoch)
 
     if (args.save_model):
         torch.save(model.state_dict(),"mnist_cnn.pt")
 if __name__ == "__main__":
     main()
+    workdir = os.environ['TACC_WORKDIR']
+    userdir = os.environ['TACC_USERDIR']
+    cur_path = os.getcwd()
+    job_name = cur_path.split('/')[-1]
+    distpath = userdir+"/"+job_name
+    print(distpath)
+    if int(os.environ['SLURM_PROCID']) == 0:
+        if os.path.exists(distpath) and os.path.isdir(distpath):
+            shutil.rmtree(distpath)
+        shutil.copytree(workdir, userdir+"/"+job_name)
