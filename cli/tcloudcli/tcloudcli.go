@@ -511,7 +511,11 @@ func (tcloudcli *TcloudCli) XCP(IsDir bool, args ...string) bool {
 
 func (tcloudcli *TcloudCli) XLS(IsLong bool, IsReverse bool, IsAll bool, args ...string) bool {
 	var src, flags string
-	src = args[0]
+	if len(args) > 0 {
+		src = args[0]
+	} else {
+		src = "."
+	}
 	flags = ""
 	if IsLong {
 		flags += " -l"
@@ -530,6 +534,16 @@ func (tcloudcli *TcloudCli) XLS(IsLong bool, IsReverse bool, IsAll bool, args ..
 	// fmt.Println(cmd)
 	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
 		fmt.Printf("Failed to ls%s %s\n", flags, remote)
+		return true
+	}
+	return false
+}
+
+func (tcloudcli *TcloudCli) XCancel(job string, args ...string) bool {
+	var cmd string
+	cmd = fmt.Sprintf("%s squeue -j %s", tcloudcli.prefix, job)
+	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
+		fmt.Printf("Failed to cancel job %s.", job)
 		return true
 	}
 	return false
