@@ -12,7 +12,7 @@ build : ${ARTIFACTS}
 
 ${ARTIFACTS} : main.go
 		mkdir -p bin
-		go build -i -o bin/tcloud tcloud-sdk/cli
+		CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -i -o bin/tcloud tcloud-sdk/cli
 
 ${INSTALL_BIN} : ${ARTIFACTS}
 

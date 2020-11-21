@@ -323,34 +323,29 @@ func (tcloudcli *TcloudCli) XPS(job string, args ...string) bool {
 
 // TODO(Just a receive file prototype, dstPath TODEFINE, config TODEFINE)
 func (tcloudcli *TcloudCli) XInit(args ...string) bool {
-	// TODO(config file path)
-	if len(args) == 1 {
-		// Remote receive config file
-		src := fmt.Sprintf("/mnt/sharefs/home/%s/%s/.clusterconfig", tcloudcli.userConfig.UserName, args[0])
-		dst := fmt.Sprintf("%s", filepath.Join(os.Getenv("HOME"), ".tcloud"))
-		IsDir := false
+	// Remote receive config file
+	src := fmt.Sprintf("/mnt/sharefs/home/%s/.clusterconfig", tcloudcli.userConfig.UserName)
+	dst := fmt.Sprintf("%s", filepath.Join(os.Getenv("HOME"), ".tcloud"))
+	IsDir := false
 
-		// cmd := fmt.Sprintf("scp %s@%s:%s %s", tcloudcli.userConfig.UserName, tcloudcli.userConfig.SSHpath[1], src, src)
-		// if err := tcloudcli.RemoteExecCmd(cmd); err == true {
-		// 	fmt.Println("Failed to receive file at Staging Node: ", err)
-		// 	return true
-		// }
+	// cmd := fmt.Sprintf("scp %s@%s:%s %s", tcloudcli.userConfig.UserName, tcloudcli.userConfig.SSHpath[1], src, src)
+	// if err := tcloudcli.RemoteExecCmd(cmd); err == true {
+	// 	fmt.Println("Failed to receive file at Staging Node: ", err)
+	// 	return true
+	// }
 
-		if err := tcloudcli.RecvFromCluster(src, dst, IsDir); err == true {
-			fmt.Println("Failed to receive file at localhost.")
-			return true
-		}
-		cmd := fmt.Sprintf("sinfo")
-		if err := tcloudcli.RemoteExecCmd(cmd); err == true {
-			fmt.Println("Failed to get cluster information: ", err)
-			return true
-		}
-		// TODO(Parse config file and update shell)
-		fmt.Println("User's file configured.")
-		return false
+	if err := tcloudcli.RecvFromCluster(src, dst, IsDir); err == true {
+		fmt.Println("Failed to receive file at localhost.")
+		return true
 	}
-	fmt.Println("Failed to parse args.")
-	return true
+	cmd := fmt.Sprintf("sinfo")
+	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
+		fmt.Println("Failed to get cluster information: ", err)
+		return true
+	}
+	// TODO(Parse config file and update shell)
+	fmt.Println("User's file configured.")
+	return false
 }
 
 // func (tcloudcli *TcloudCli) XDownload(args ...string) bool {
