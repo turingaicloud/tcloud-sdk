@@ -1,5 +1,5 @@
 #!/bin/bash
-source /mnt/sharefs/home/testuser/WORKDIR/miniconda3/etc/profile.d/conda.sh
+source /mnt/sharefs/home/testuser/WORKDIR/Miniconda3/etc/profile.d/conda.sh
 conda activate tf
 
 python ${TACC_WORKDIR}/mnist.py \
