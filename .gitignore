@@ -10,3 +10,4 @@ pkg/
 *.linux
 *.windows
 *.mac
+xcompile.sh
