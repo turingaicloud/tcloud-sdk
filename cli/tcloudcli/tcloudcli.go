@@ -55,7 +55,7 @@ func (tcloudcli *TcloudCli) ClusterConfig(option string) []string {
 func (tcloudcli *TcloudCli) NewSession() *ssh.Session {
 	buffer, err := ioutil.ReadFile(tcloudcli.userConfig.AuthFile)
 	if err != nil {
-		fmt.Println("Failed to read AuthFile at %s", tcloudcli.userConfig.AuthFile)
+		fmt.Println("Failed to read AuthFile at ", tcloudcli.userConfig.AuthFile)
 		return nil
 	}
 	signer, _ := ssh.ParsePrivateKey(buffer)
@@ -335,7 +335,7 @@ func (tcloudcli *TcloudCli) XPS(job string, args ...string) bool {
 // TODO(Just a receive file prototype, dstPath TODEFINE, config TODEFINE)
 func (tcloudcli *TcloudCli) XInit(args ...string) bool {
 	// Remote receive config file
-	src := fmt.Sprintf("/mnt/sharefs/home/%s/.clusterconfig", tcloudcli.userConfig.UserName)
+	src := fmt.Sprintf("/mnt/sharefs/home/.clusterconfig")
 	dst := fmt.Sprintf("%s", filepath.Join(os.Getenv("HOME"), ".tcloud"))
 	IsDir := false
 
@@ -344,7 +344,6 @@ func (tcloudcli *TcloudCli) XInit(args ...string) bool {
 	// 	fmt.Println("Failed to receive file at Staging Node: ", err)
 	// 	return true
 	// }
-
 	if err := tcloudcli.RecvFromCluster(src, dst, IsDir); err == true {
 		fmt.Println("Failed to receive file at localhost.")
 		return true

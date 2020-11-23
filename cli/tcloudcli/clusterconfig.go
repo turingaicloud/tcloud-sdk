@@ -21,7 +21,7 @@ func NewClusterConfig(path string) *ClusterConfig {
 	}
 	decoder := json.NewDecoder(file)
 	if err = decoder.Decode(&config); err != nil {
-		fmt.Println("Failed to parse clusterconfig file")
+		// fmt.Println("Failed to parse clusterconfig file")
 		return &ClusterConfig{path: path}
 	}
 	// fmt.Println(config)
