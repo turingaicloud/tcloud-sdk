@@ -27,10 +27,7 @@ type TuxivConfig struct {
 		Log     string
 		// Model 	string
 	}
-	Datasets []struct {
-		Name string
-		Url  string
-	}
+	Datasets []string
 }
 
 func (config *TuxivConfig) TACCJobEnv(remoteWorkDir string, remoteUserDir string) ([]string, map[string]string) {
@@ -46,7 +43,7 @@ func (config *TuxivConfig) TACCJobEnv(remoteWorkDir string, remoteUserDir string
 	return strlist, TACCDir
 }
 
-func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, args []string) (string, string, map[string]string, bool) {
+func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, args []string) (string, string, map[string]string, []string, bool) {
 	// var tuxivFile string
 	var tuxivFile = "tuxiv.conf"
 	var localConfDir, localWorkDir string
@@ -79,7 +76,7 @@ func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, args []string) (
 
 	yamlFile, err := ioutil.ReadFile(tuxivFile)
 	if err != nil {
-		return localWorkDir, repoName, TACCDir, true
+		return localWorkDir, repoName, TACCDir, nil, true
 	}
 
 	err = yaml.Unmarshal(yamlFile, config)
@@ -89,22 +86,22 @@ func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, args []string) (
 
 	if err := config.CondaFile(localConfDir, remoteWorkDir); err == true {
 		fmt.Println("Environment config file generate failed.")
-		return localWorkDir, repoName, TACCDir, true
+		return localWorkDir, repoName, TACCDir, nil, true
 	}
 	var err1 bool
 	if TACCDir, err1 = config.SlurmFile(localConfDir, remoteWorkDir, remoteUserDir); err1 == true {
 		fmt.Println("Slurm config file generate failed.")
-		return localWorkDir, repoName, TACCDir, true
+		return localWorkDir, repoName, TACCDir, config.Datasets, true
 	}
 	if err := config.CityFile(localConfDir); err == true {
 		fmt.Println("Datasets config file generate failed.")
-		return localWorkDir, repoName, TACCDir, true
+		return localWorkDir, repoName, TACCDir, config.Datasets, true
 	}
 	if err := config.RunshFile(tcloudcli, localWorkDir); err == true {
 		fmt.Println("Run.sh exec file generate failed.")
-		return localWorkDir, repoName, TACCDir, true
+		return localWorkDir, repoName, TACCDir, config.Datasets, true
 	}
-	return localWorkDir, repoName, TACCDir, false
+	return localWorkDir, repoName, TACCDir, config.Datasets, false
 }
 
 func (config *TuxivConfig) CondaFile(localConfDir string, remoteWorkDir string) bool {
@@ -188,9 +185,9 @@ func (config *TuxivConfig) CityFile(localConfDir string) bool {
 	w := bufio.NewWriter(f)
 	// TODO(Restructure cityFile) Not yet clear about the file format
 	for _, s := range config.Datasets {
-		str := fmt.Sprintf("%s\n%s\n", s.Name, s.Url)
-		fmt.Fprintln(w, str)
+		fmt.Fprintln(w, s)
 	}
+
 	w.Flush()
 	return false
 }
