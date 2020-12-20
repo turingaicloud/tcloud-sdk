@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/spf13/cobra"
+	"log"
 	"os"
 
 	"tcloud-sdk/cli/tcloudcli"
@@ -26,18 +27,17 @@ func NewConfigCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 			file, err := os.Create(cli.UserConfig("path")[0])
 			defer file.Close()
 			if err != nil {
-				fmt.Println("Failed to open ", cli.UserConfig("path")[0])
+				log.Println("Failed to open ", cli.UserConfig("path")[0])
 				return
 			}
 			config.UserName = userName
 			config.AuthFile = authFile
 			config.SSHpath = cli.UserConfig("sshpath")
-			// config.Dir = cli.ClusterConfig("dir")
-			// config.path = cli.UserConfig("path")[0]
+			config.Port = cli.UserConfig("port")[0]
 
 			encoder := json.NewEncoder(file)
 			if err := encoder.Encode(config); err != nil {
-				fmt.Println("Failed to encode struct UserConfig.", err.Error())
+				log.Println("Failed to encode struct UserConfig.", err.Error())
 				return
 			}
 		},
