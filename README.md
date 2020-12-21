@@ -9,12 +9,14 @@ tcloud [command] [flags] [args]
 Available Commands:
     tcloud init
     tcloud config [-u/-f] [args]
-    tcloud download [<url>]
+    tcloud download [<filepath>]
     tcloud add
     tcloud submit
     tcloud ps [-j] [<JOB_ID>]
     tcloud install
     tcloud log [-j] [<JOB_ID>]
+    tcloud cancel [-j] [<JOB_ID>]
+    tcloud ls
 
 Use "tcloud [command] --help" for more information about a command.
 ```
@@ -77,18 +79,15 @@ You can use `tcloud init` to initialize the job configuration. `tcloud init` wil
 
 + Datasets
 
-  In this section, you can specify the data location or url for your job.
+  In this section, you can specify the data name for your job.
 
 #### TACC VARIABLES
 
 + `TACC_WORKDIR`: TACC job workspace directory, each job has a different workspace directory.
-+ `TACC_MASTER_IP`: Master node IP for initialize the communication group.
-+ `TACC_WORLD_SIZE`: Size of communication group.
-+ `TACC_RANK`: Rank of nodes for multi-node jobs.
-+ `TACC_LOCAL_RANK`: Local rank of worker in same node.
-+ `TACC_CLUSTER_LIST`: IP of each node in communication group.
++ `TACC_USERDIR`: TACC User directory.
++ `TACC_SLURM_USERLOG`: Slurm log directory, the default value is `${TACC_USERDIR}/slurm_log`.
 
 ## Example
 
-Basic examples are provided under the [example](example) folder. These examples include: [TensorFlow](example/TensorFlow), [PyTorch](example/PyTorch) and [MXNet](example/MXNet).
+Basic examples are provided under the [example](example) folder. These examples include: [HelloWorld](example/helloworld), [TensorFlow](example/TensorFlow), [PyTorch](example/PyTorch) and [MXNet](example/MXNet).
 

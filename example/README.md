@@ -2,7 +2,7 @@
 
 TACC supports multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We will later support some specialized ML framework like FATE, etc. Here we list several job examples of different frameworks.
 
-## Helloworld
+## HelloWorld
 
 + Dataset: OpenRoadMap
 + Task: basic usage of tcloud
@@ -89,7 +89,7 @@ TACC supports multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We w
     ~~~shell
     TACC_WORKDIR # default repo directory
     TACC_USERDIR # user directory
-  TACC_SLURM_USERLOG # slurm log directory default: ${TACC_USERDIR}/slurm_log
+    TACC_SLURM_USERLOG # slurm log directory default: ${TACC_USERDIR}/slurm_log
     ~~~
 
   + TuXiv configuration
@@ -144,7 +144,7 @@ TACC supports multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We w
     ~~~shell
     TACC_WORKDIR # default repo directory
     TACC_USERDIR # user directory
-  TACC_SLURM_USERLOG # slurm log directory default: ${TACC_USERDIR}/slurm_log
+    TACC_SLURM_USERLOG # slurm log directory default: ${TACC_USERDIR}/slurm_log
     ~~~
 
   + TuXiv configuration
@@ -217,7 +217,7 @@ TACC supports multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We w
     ~~~shell
     TACC_WORKDIR # default repo directory
     TACC_USERDIR # user directory
-  TACC_SLURM_USERLOG # slurm log directory default: ${TACC_USERDIR}/slurm_log
+    TACC_SLURM_USERLOG # slurm log directory default: ${TACC_USERDIR}/slurm_log
     ~~~
 
   + TuXiv configuration
