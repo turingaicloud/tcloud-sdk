@@ -7,6 +7,7 @@ LINUX_MAKEFILE="Makefile.linux"
 WINDOWS_MAKEFILE="Makefile.windows"
 
 QUICKSTART_PATH="/Users/xcwan/Desktop/Workspace/Project/quickstart"
+TCLOUD_PATH=$PWD
 
 cd cli
 
@@ -26,3 +27,6 @@ cd ${QUICKSTART_PATH}/bin
 zip -r linux-amd64-v${VERSION}.zip linux-amd64-v${VERSION}
 zip -r windows-amd64-v${VERSION}.zip windows-amd64-v${VERSION}
 zip -r macos-amd64-v${VERSION}.zip macos-amd64-v${VERSION}
+
+cd ${TCLOUD_PATH}
+make clean
