@@ -4,9 +4,9 @@ TACC supports multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We w
 
 ## HelloWorld
 
-+ Dataset: OpenRoadMap
++ CityNet Dataset: OpenRoadMap
 + Task: basic usage of tcloud
-+ Code: [main.py](https://github.com/xcwanAndy/tcloud-sdk/blob/master/example/helloworld/main.py)
++ Code: [main.py](helloworld/main.py)
 
 ### Getting started
 
@@ -74,7 +74,7 @@ TACC supports multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We w
 
 + Dataset: mnist
 + Task: image classification
-+ Code: [mnist.py](https://github.com/xcwanAndy/tcloud-sdk/blob/master/example/TensorFlow/mnist.py)
++ Code: [mnist.py](TensorFlow/mnist.py)
 
 ### Getting started
 
@@ -129,7 +129,7 @@ TACC supports multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We w
 
 + Dataset: mnist
 + Task: image classification
-+ Code: [mnist.py](https://github.com/xcwanAndy/tcloud-sdk/blob/master/example/Pytorch/mnist.py)
++ Code: [mnist.py](PyTorch/mnist.py)
 
 ### Getting started
 
@@ -202,7 +202,7 @@ TACC supports multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We w
 
 + Dataset: mnist
 + Task: image classification
-+ Code: [mnist.py](https://github.com/xcwanAndy/tcloud-sdk/blob/master/example/MXNET/mnist.py)
++ Code: [mnist.py](MXNet/mnist.py)
 
 ### Getting started
 
