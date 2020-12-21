@@ -53,7 +53,7 @@ func homeDIR() string {
 }
 
 func TcloudInit(home string) bool {
-	log.SetPrefix("[Tcloud]")
+	log.SetPrefix("[Tcloud Error] ")
 	log.SetFlags(log.Ldate | log.Lshortfile)
 
 	tcloudDIR := fmt.Sprintf("%s/.tcloud", home)

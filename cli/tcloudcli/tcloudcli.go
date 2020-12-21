@@ -334,7 +334,7 @@ func (tcloudcli *TcloudCli) CondaCreate(repoName string, envName string, randStr
 	condaYaml := fmt.Sprintf("%s/%s/%s/configurations/conda.yaml", homeDir, tcloudcli.clusterConfig.Dirs["workdir"], repoName)
 	cmd := fmt.Sprintf("%s %s env create -f %s -n %s\n", tcloudcli.prefix, condaBin, condaYaml, envName)
 	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
-		log.Println("Failed to run cmd in CondaCreate ", err)
+		log.Println("Failed to run cmd in CondaCreate")
 		return true
 	}
 
