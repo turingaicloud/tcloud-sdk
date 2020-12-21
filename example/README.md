@@ -87,7 +87,7 @@ TACC support multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We wi
     ~~~shell
     TACC_WORKDIR # default repo directory
     TACC_USERDIR # user directory
-  TACC_SLURM_USERLOG # slurm log directory default: ${TACC_USERDIR}/slurm_log
+    TACC_SLURM_USERLOG # slurm log directory default: ${TACC_USERDIR}/slurm_log
     ~~~
 
   + TuXiv configuration
@@ -141,7 +141,7 @@ TACC support multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We wi
     ~~~shell
     TACC_WORKDIR # default repo directory
     TACC_USERDIR # user directory
-  TACC_SLURM_USERLOG # slurm log directory default: ${TACC_USERDIR}/slurm_log
+    TACC_SLURM_USERLOG # slurm log directory default: ${TACC_USERDIR}/slurm_log
     ~~~
 
   + TuXiv configuration
@@ -213,7 +213,7 @@ TACC support multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We wi
     ~~~shell
     TACC_WORKDIR # default repo directory
     TACC_USERDIR # user directory
-  TACC_SLURM_USERLOG # slurm log directory default: ${TACC_USERDIR}/slurm_log
+    TACC_SLURM_USERLOG # slurm log directory default: ${TACC_USERDIR}/slurm_log
     ~~~
 
   + TuXiv configuration
