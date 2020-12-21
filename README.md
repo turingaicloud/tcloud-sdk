@@ -16,6 +16,7 @@ Available Commands:
     tcloud install
     tcloud log [-j] [<JOB_ID>]
     tcloud cancel [-j] [<JOB_ID>]
+    tcloud ls
 
 Use "tcloud [command] --help" for more information about a command.
 ```
