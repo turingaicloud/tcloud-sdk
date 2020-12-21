@@ -1,7 +1,7 @@
 # TCLOUD-SDK
 ## Command-line Interface used for TACC job submission.
 ```
-TCLOUD Command-line Interface v0.0.2
+TCLOUD Command-line Interface v0.1.0
 
 Usage:
 tcloud [command] [flags] [args]
@@ -10,15 +10,15 @@ Available Commands:
     tcloud init
     tcloud config [-u/-f] [args]
     tcloud download [<filepath>]
-    tcloud add
-    tcloud submit
+    tcloud add [<dependency_name>]
+    tcloud submit [<path_to_repo>]
     tcloud ps [-j] [<JOB_ID>]
-    tcloud install
+    tcloud install [<path_to_repo>]
     tcloud log [-j] [<JOB_ID>]
     tcloud cancel [-j] [<JOB_ID>]
-    tcloud ls
+    tcloud ls [<filepath>]
 
-Use "tcloud [command] --help" for more information about a command.
+Use "tcloud [command] --help" for more information about commands.
 ```
 
 ## Installation
@@ -42,7 +42,7 @@ $ tcloud config [-f/--file] MYFILEPATH
 ### Job Configuration
 #### TUXIV.CONF
 
-You can use `tcloud init` to initialize the job configuration. `tcloud init` will create a template configuration file named `tuxiv.conf` . There are four parts in `tuxiv.conf`, config different parts of job submission. Noted that `tuxiv.conf` follows the yaml format.
+You can use `tcloud init` to pull latest cluster configurations from remote. There are four parts in `tuxiv.conf`, config different parts of job submission. Noted that `tuxiv.conf` follows the yaml format.
 
 + Entrypoint
 
@@ -68,18 +68,24 @@ You can use `tcloud init` to initialize the job configuration. `tcloud init` wil
 
 + Job
 
-  In this section, you can specify your slurm configurations for slurm cluster resources, including number of nodes, CPUs, GPUs and so on. All the slurm cluster configuration should be set in the general part.
+  In this section, you can specify your slurm configurations for slurm cluster resources, including number of nodes, CPUs, GPUs, output file and so on. All the slurm cluster configuration should be set in the general part.
 
   ~~~yaml
   job:
       name: test
       general:
           - nodes=2
+          - output=${TACC_SLURM_USERLOG}/output.log
   ~~~
 
 + Datasets
 
-  In this section, you can specify the data name for your job.
+  In this section, you can specify the required CityNet dataset name for your job. You can view the table of CityNet datasets at [CityNet Dataset Info](https://docs.google.com/spreadsheets/d/18qi2YpYvuXkWns7KY9pHYQclhS1Yyt5ysqgZ4plYcTg/edit#gid=0).
+
+  ~~~yaml
+  datasets:
+    - OpenRoadMap
+  ~~~
 
 #### TACC VARIABLES
 
