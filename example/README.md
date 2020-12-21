@@ -10,7 +10,7 @@ TACC supports multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We w
 
 ### Getting started
 
-+ Install tcloud CLI, and run `tcloud init` to pull latest cluster configurations from remote.
++ Install tcloud CLI, and run `tcloud init` to pull the latest cluster configurations from remote.
 
 + Configuration
 
