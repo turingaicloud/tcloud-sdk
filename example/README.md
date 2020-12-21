@@ -1,20 +1,20 @@
-# TCloud Examples
+# Tcloud Examples
 
-TACC support multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We will later support some specialized ML framework like FATE, etc. Here we list several job examples of different frameworks.
+TACC supports multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We will later support some specialized ML framework like FATE, etc. Here we list several job examples of different frameworks.
 
 ## Helloworld
 
 + Dataset: OpenRoadMap
-+ Task: basic operation of tcloud
++ Task: basic usage of tcloud
 + Code: [main.py](https://github.com/xcwanAndy/tcloud-sdk/blob/master/example/helloworld/main.py)
 
 ### Getting started
 
-+ Install tcloud CLI, and run `tcloud init` to pull cluster configurations from remote.
++ Install tcloud CLI, and run `tcloud init` to pull latest cluster configurations from remote.
 
 + Configuration
 
-  + Config user informations using `tcloud config`.
+  + Configure user information using `tcloud config`.
 
   + TACC ENV
 
@@ -59,12 +59,14 @@ TACC support multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We wi
     shutil.copytree(WORKDIR, "{}/helloworld".format(USERDIR))
     ~~~
 
-### Submiting
+### Submit job
 
-+ Enter the `TACC_WORKDIR` directory and follow the steps.
++ Enter the `helloworld` directory and follow the following steps.
 + Build environment and submit job: `tcloud submit`
-+ Monitor job: `tcloud ps [job id]`
-+ Cancel job: `tcloud cancel [job id]`
++ Monitor job: `tcloud ps [-j] [<JOB_ID>]`
++ Obtain log: `tcloud download helloworld/slurm_log/hello.out`
++ Cancel job: `tcloud cancel [-j] [<JOB_ID>]`
++ View UserDir: `tcloud ls <PATH>`
 
 
 
@@ -115,10 +117,11 @@ TACC support multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We wi
 
 ### Training
 
-+ Enter the `TACC_WORKDIR` directory and follow the steps.
++ Enter the `TensorFlow` directory and follow the following steps.
 + Build environment and submit job: `tcloud submit`
-+ Monitor job: `tcloud ps [job id]`
-+ Cancel job: `tcloud cancel [job id]`
++ Monitor job: `tcloud ps [-j] [<JOB_ID>]`
++ Cancel job: `tcloud cancel [-j] [<JOB_ID>]`
++ View UserDir: `tcloud ls <PATH>`
 
 
 
@@ -187,10 +190,11 @@ TACC support multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We wi
 
 ### Training
 
-+ Enter the `TACC_WORKDIR` directory and follow the steps.
++ Enter the `PyTorch` directory and follow the following steps.
 + Build environment and submit job: `tcloud submit`
-+ Monitor job: `tcloud ps [job id]`
-+ Cancel job: `tcloud cancel [job id]`
++ Monitor job: `tcloud ps [-j] [<JOB_ID>]`
++ Cancel job: `tcloud cancel [-j] [<JOB_ID>]`
++ View UserDir: `tcloud ls <PATH>`
 
 
 
@@ -238,8 +242,9 @@ TACC support multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We wi
 
 ### Training
 
-+ Enter the `TACC_WORKDIR` directory and follow the steps.
++ Enter the `MXNet` directory and follow the following steps.
 + Build environment and submit job: `tcloud submit`
-+ Monitor job: `tcloud ps [job id]`
-+ Cancel job: `tcloud cancel [job id]`
++ Monitor job: `tcloud ps [-j] [<JOB_ID>]`
++ Cancel job: `tcloud cancel [-j] [<JOB_ID>]`
++ View UserDir: `tcloud ls <PATH>`
 
