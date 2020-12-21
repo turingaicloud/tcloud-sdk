@@ -9,12 +9,13 @@ tcloud [command] [flags] [args]
 Available Commands:
     tcloud init
     tcloud config [-u/-f] [args]
-    tcloud download [<url>]
+    tcloud download [<filepath>]
     tcloud add
     tcloud submit
     tcloud ps [-j] [<JOB_ID>]
     tcloud install
     tcloud log [-j] [<JOB_ID>]
+    tcloud cancel [-j] [<JOB_ID>]
 
 Use "tcloud [command] --help" for more information about a command.
 ```
