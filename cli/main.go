@@ -40,7 +40,7 @@ func newTcloudCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 	tcloudCmd.AddCommand(cmd.NewDownloadCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewAddCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewInstallCommand(cli))
-	tcloudCmd.AddCommand(cmd.NewDatasetCommand(cli))
+	// tcloudCmd.AddCommand(cmd.NewDatasetCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewLSCommand(cli))
 
 	var Verbose bool
