@@ -2,15 +2,15 @@
 
 TACC support multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We will later support some specialized ML framework like FATE, etc. Here we list several job examples of different frameworks.
 
-## TensorFlow
+## Helloworld
 
-+ Dataset: mnist
-+ Task: image classification
-+ Code: [mnist.py](https://github.com/xcwanAndy/tcloud-sdk/blob/master/example/TensorFlow/mnist.py)
++ Dataset: OpenRoadMap
++ Task: basic operation of tcloud
++ Code: [main.py](https://github.com/xcwanAndy/tcloud-sdk/blob/master/example/helloworld/main.py)
 
 ### Getting started
 
-+ Install tcloud CLI, and run `tcloud init` to generate template for configuration.
++ Install tcloud CLI, and run `tcloud init` to pull cluster configurations from remote.
 
 + Configuration
 
@@ -19,11 +19,79 @@ TACC support multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We wi
   + TACC ENV
 
     ~~~shell
-    TACC_WORKERDIR #repo directory
+    TACC_WORKDIR # default repo directory
+    TACC_USERDIR # user directory
+    TACC_SLURM_USERLOG # slurm log directory default: ${TACC_USERDIR}/slurm_log
     ~~~
 
   + TuXiv configuration
 
+    ~~~yaml
+    # tuxiv.conf
+    entrypoint:
+    - python ${TACC_WORKDIR}/main.py
+    environment:
+        name: hello 
+        dependencies:
+            - python=3.6.9
+    job:
+        name: test
+        general:
+            - output=${TACC_SLURM_USERLOG}/hello.out
+            - nodes=1
+            - ntasks=1
+            - cpus-per-task=1
+    datasets:
+      - OpenRoadMap
+    ~~~
+
+  + Model code modification
+
+    ~~~python
+    import os
+    import shutil
+    # get variables from env
+    WORKDIR = os.environ.get('TACC_WORKDIR')
+    USERDIR = os.environ.get('TACC_USERDIR')
+    # show the directory tree
+    os.system('tree -L 2 {}'.format(USERDIR))
+    # basic copy operation
+    shutil.copytree(WORKDIR, "{}/helloworld".format(USERDIR))
+    ~~~
+
+### Submiting
+
++ Enter the `TACC_WORKDIR` directory and follow the steps.
++ Build environment and submit job: `tcloud submit`
++ Monitor job: `tcloud ps [job id]`
++ Cancel job: `tcloud cancel [job id]`
+
+
+
+## TensorFlow
+
++ Dataset: mnist
++ Task: image classification
++ Code: [mnist.py](https://github.com/xcwanAndy/tcloud-sdk/blob/master/example/TensorFlow/mnist.py)
+
+### Getting started
+
++ Install tcloud CLI, and run `tcloud init` to pull cluster configurations from remote.
+
++ Configuration
+
+  + Config user informations using `tcloud config`.
+
+  + TACC ENV
+
+    ~~~shell
+    TACC_WORKDIR # default repo directory
+    TACC_USERDIR # user directory
+  TACC_SLURM_USERLOG # slurm log directory default: ${TACC_USERDIR}/slurm_log
+    ~~~
+
+  + TuXiv configuration
+  
     ~~~yaml
     # tuxiv.conf
     entrypoint:
@@ -38,11 +106,11 @@ TACC support multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We wi
     job:
         name: mnist
         general:
-            - nodes=2
+          - nodes=2
     ~~~
 
   + Model code modification
-
+  
     Use ` tf.distribute.cluster_resolver.SlurmClusterResolver`  instead of other resolvers.
 
 ### Training
@@ -62,7 +130,7 @@ TACC support multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We wi
 
 ### Getting started
 
-+ Install tcloud CLI, and run `tcloud init` to generate template for configuration.
++ Install tcloud CLI, and run `tcloud init` to pull cluster configurations from remote.
 
 + Configuration
 
@@ -71,11 +139,13 @@ TACC support multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We wi
   + TACC ENV
 
     ~~~shell
-    TACC_WORKERDIR #repo directory
+    TACC_WORKDIR # default repo directory
+    TACC_USERDIR # user directory
+  TACC_SLURM_USERLOG # slurm log directory default: ${TACC_USERDIR}/slurm_log
     ~~~
 
   + TuXiv configuration
-
+  
     ~~~yaml
     # tuxiv.conf
     entrypoint:
@@ -89,13 +159,13 @@ TACC support multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We wi
     job:
         name: test
         general:
-            - nodes=2
+          - nodes=2
     ~~~
 
   + Model code modification
 
     Obtain environment variables from slurm cluster, and set the parameters for initialize the cluster.
-
+  
     ~~~python
     # example
     def dist_init(host_addr, rank, local_rank, world_size, port=23456):
@@ -132,7 +202,7 @@ TACC support multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We wi
 
 ### Getting started
 
-+ Install tcloud CLI, and run `tcloud init` to generate template for configuration.
++ Install tcloud CLI, and run `tcloud init` to pull cluster configurations from remote.
 
 + Configuration
 
@@ -141,11 +211,13 @@ TACC support multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We wi
   + TACC ENV
 
     ~~~shell
-    TACC_WORKERDIR #repo directory
+    TACC_WORKDIR # default repo directory
+    TACC_USERDIR # user directory
+  TACC_SLURM_USERLOG # slurm log directory default: ${TACC_USERDIR}/slurm_log
     ~~~
 
   + TuXiv configuration
-
+  
     ~~~yaml
     # tuxiv.conf
     entrypoint:
@@ -157,11 +229,11 @@ TACC support multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We wi
     job:
         name: test
         general:
-            - nodes=2
+          - nodes=2
     ~~~
 
   + Model code modification
-
+  
     Obtain environment variables from slurm cluster, and set the parameters for initialize the cluster.
 
 ### Training
@@ -170,3 +242,4 @@ TACC support multiple ML frameworks such as TensorFlow, PyTorch and MXNet. We wi
 + Build environment and submit job: `tcloud submit`
 + Monitor job: `tcloud ps [job id]`
 + Cancel job: `tcloud cancel [job id]`
+
