@@ -264,9 +264,6 @@ func (tcloudcli *TcloudCli) BuildEnv(submitEnv *TACCGlobalEnv, args ...string) m
 		os.Exit(-1)
 	}
 	envName := config.Environment.Name
-	if tcloudcli.CondaCacheCheck(envName){
-		 return TACCDir
-	}
 	if err = tcloudcli.UploadRepo(repoName, localWorkDir); err == true {
 		log.Println("Upload repository env failed")
 		os.Exit(-1)
@@ -609,10 +606,10 @@ func (tcloudcli *TcloudCli) XDataset(args ...string) bool {
 }
 func (tcloudcli *TcloudCli) CondaCacheCheck(envName string) bool{
 	// Get env list from remote
-	cmd := exec.Command("conda", "env", "list")
+	cmd :=  fmt.Sprintf("conda env list")
 	var envList []string
-	if out, err := cmd.CombinedOutput(); err != nil {
-		fmt.Println("Failed to create local environment. Err: ", err.Error())
+	if out, err := tcloudcli.RemoteExecCmdOutput(cmd); err == true {
+		log.Println("Failed to get env list")
 		return true
 	} else {
 		envList := strings.Split(strings.Trim(string(out),"\n "), "\n")
