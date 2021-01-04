@@ -10,6 +10,9 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sort"
+	"crypto/md5"
+	"encoding/hex"
 )
 
 type TuxivConfig struct {
@@ -62,7 +65,7 @@ func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, submitEnv *TACCG
 		submitEnv.RemoteWorkDir = fmt.Sprintf("%s/%s/%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"], submitEnv.RepoName)
 		submitEnv.RemoteUserDir = fmt.Sprintf("%s/%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
 	}
-
+	config.EnvNameGenerator(submitEnv.RepoName)
 	yamlFile, err := ioutil.ReadFile(tuxivFile)
 	if err != nil {
 		return submitEnv.LocalWorkDir, submitEnv.RepoName, TACCDir, nil, true
@@ -252,4 +255,17 @@ func ReplaceGlobalEnv(str string, submitEnv *TACCGlobalEnv) string {
 	str = strings.Replace(str, "${TACC_SLURM_USERLOG}", slurm_log, -1)
 	str = strings.Replace(str, "$TACC_SLURM_USERLOG", slurm_log, -1)
 	return str
+}
+func (config *TuxivConfig) EnvNameGenerator(repoName string) string{
+	// Parse package (with version) list from conda.yaml
+	dep := config.Environment.Dependencies
+	// Sort the package by Alphabetical order and contact as a string
+	sort.Strings(dep)
+	// Generate md5 hash value from the string
+	jointDep := strings.Join(dep, " ")
+	data := []byte(jointDep)
+	hashValue := md5.Sum(data)
+	hashString := hex.EncodeToString(hashValue[:])
+	config.Environment.Name = hashString
+	return hashString	
 }

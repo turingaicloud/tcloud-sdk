@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
 	shellquote "github.com/gonuts/go-shellquote"
 	"golang.org/x/crypto/ssh"
 )
@@ -264,6 +263,10 @@ func (tcloudcli *TcloudCli) BuildEnv(submitEnv *TACCGlobalEnv, args ...string) m
 		log.Println("Parse tuxiv config file failed.")
 		os.Exit(-1)
 	}
+	envName := config.Environment.Name
+	if tcloudcli.CondaCacheCheck(envName){
+		 return TACCDir
+	}
 	if err = tcloudcli.UploadRepo(repoName, localWorkDir); err == true {
 		log.Println("Upload repository env failed")
 		os.Exit(-1)
@@ -273,12 +276,11 @@ func (tcloudcli *TcloudCli) BuildEnv(submitEnv *TACCGlobalEnv, args ...string) m
 		log.Println("Failed to add softlink.")
 		os.Exit(-1)
 	}
-
-	if err = tcloudcli.CondaRemove(config.Environment.Name, randString); err == true {
-		log.Println("Remove conda env failed")
-		os.Exit(-1)
+	// Generate env name and check if hit the cache, if so, return, otherwise, create new env.
+	if tcloudcli.CondaCacheCheck(envName){
+		 return TACCDir
 	}
-	if err = tcloudcli.CondaCreate(repoName, config.Environment.Name, randString); err == true {
+	if err = tcloudcli.CondaCreate(repoName, envName, randString); err == true {
 		log.Println("Create conda env failed")
 		os.Exit(-1)
 	}
@@ -341,7 +343,7 @@ func (tcloudcli *TcloudCli) CondaCreate(repoName string, envName string, randStr
 	fmt.Println("Environment \"", envName, "\" created.")
 	return false
 }
-func (tcloudcli *TcloudCli) CondaRemove(envName string, randString string) bool {
+func (tcloudcli *TcloudCli) CondaRemove(envName string) bool {
 	homeDir := fmt.Sprintf("%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName)
 	condaBin := fmt.Sprintf("%s/%s", homeDir, tcloudcli.clusterConfig.Conda)
 	cmd := fmt.Sprintf("%s %s remove -n %s --all -y", tcloudcli.prefix, condaBin, envName)
@@ -602,6 +604,41 @@ func (tcloudcli *TcloudCli) XDataset(args ...string) bool {
 	if err := tcloudcli.AddSoftLink(args); err == true {
 		log.Printf("Failed to create dataset %s", args[0])
 		return true
+	}
+	return false
+}
+func (tcloudcli *TcloudCli) CondaCacheCheck(envName string) bool{
+	// Get env list from remote
+	cmd := exec.Command("conda", "env", "list")
+	var envList []string
+	if out, err := cmd.CombinedOutput(); err != nil {
+		fmt.Println("Failed to create local environment. Err: ", err.Error())
+		return true
+	} else {
+		envList := strings.Split(strings.Trim(string(out),"\n "), "\n")
+		for i, env := range envList {
+			if i > 2 {
+				envList[i] = strings.Trim(strings.Split(env, "/")[0], " ")
+			}
+		}
+		envList = envList[3:]
+		fmt.Println(envList)
+	}
+	// Check if there is a hit, if so, return true, otherwise, return false
+	for _, env := range envList {
+		if env == envName {
+			return true
+		}
+	}
+	// Check the env cach length, if length > 10, remove the older env.
+	envList = append(envList, envName)
+	for{
+		if len(envList) <= 10{break}
+		if err := tcloudcli.CondaRemove(envList[0]); err == true {
+			log.Println("Remove conda env failed")
+			os.Exit(-1)
+		}
+		envList = envList[1:]
 	}
 	return false
 }
