@@ -622,13 +622,9 @@ func (tcloudcli *TcloudCli) CondaCacheCheck(envName string) bool {
 			}
 		}
 		envList = envList[3:]
-		fmt.Println(envList)
 	}
 	// Check if there is a hit, if so, return true, otherwise, return false
-	fmt.Println(len(envList))
 	for _, env := range envList {
-		fmt.Println("env: " + env)
-		fmt.Println("envName: " + envName)
 		if env == envName {
 			return true
 		}
