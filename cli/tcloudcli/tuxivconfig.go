@@ -65,7 +65,6 @@ func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, submitEnv *TACCG
 		submitEnv.RemoteWorkDir = fmt.Sprintf("%s/%s/%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"], submitEnv.RepoName)
 		submitEnv.RemoteUserDir = fmt.Sprintf("%s/%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
 	}
-	config.EnvNameGenerator(submitEnv.RepoName)
 	yamlFile, err := ioutil.ReadFile(tuxivFile)
 	if err != nil {
 		return submitEnv.LocalWorkDir, submitEnv.RepoName, TACCDir, nil, true
@@ -76,27 +75,28 @@ func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, submitEnv *TACCG
 		os.Mkdir(submitEnv.LocalConfDir, 0755)
 	}
 
-	if err := config.CondaFile(submitEnv.LocalConfDir, submitEnv.RemoteWorkDir); err == true {
+	if err := config.CondaFile(submitEnv); err == true {
 		log.Println("Environment config file generate failed.")
 		return submitEnv.LocalWorkDir, submitEnv.RepoName, TACCDir, nil, true
 	}
 	var err1 bool
-	if TACCDir, err1 = config.SlurmFile(submitEnv, submitEnv.LocalConfDir, submitEnv.RemoteWorkDir, submitEnv.RemoteUserDir); err1 == true {
+	if TACCDir, err1 = config.SlurmFile(submitEnv); err1 == true {
 		log.Println("Slurm config file generate failed.")
 		return submitEnv.LocalWorkDir, submitEnv.RepoName, TACCDir, config.Datasets, true
 	}
-	if err := config.CityFile(submitEnv.LocalConfDir); err == true {
+	if err := config.CityFile(submitEnv); err == true {
 		log.Println("Datasets config file generate failed.")
 		return submitEnv.LocalWorkDir, submitEnv.RepoName, TACCDir, config.Datasets, true
 	}
-	if err := config.RunshFile(tcloudcli, submitEnv.LocalWorkDir); err == true {
+	if err := config.RunshFile(tcloudcli, submitEnv); err == true {
 		log.Println("Run.sh exec file generate failed.")
 		return submitEnv.LocalWorkDir, submitEnv.RepoName, TACCDir, config.Datasets, true
 	}
 	return submitEnv.LocalWorkDir, submitEnv.RepoName, TACCDir, config.Datasets, false
 }
 
-func (config *TuxivConfig) CondaFile(localConfDir string, remoteWorkDir string) bool {
+func (config *TuxivConfig) CondaFile(submitEnv *TACCGlobalEnv) bool {
+	localConfDir := submitEnv.LocalConfDir
 	f, err := os.Create(filepath.Join(localConfDir, "conda.yaml"))
 	if err != nil {
 		log.Println("Create Conda config file failed.")
@@ -106,7 +106,8 @@ func (config *TuxivConfig) CondaFile(localConfDir string, remoteWorkDir string) 
 
 	w := bufio.NewWriter(f)
 	// Conda file
-	fmt.Fprintln(w, fmt.Sprintf("name: %s", config.Environment.Name))
+	hashString := config.EnvNameGenerator()
+	fmt.Fprintln(w, fmt.Sprintf("name: %s", config.Environment.Name + "-" + hashString))
 	// Channels
 	fmt.Fprintln(w, fmt.Sprintf("channels:"))
 	for _, s := range config.Environment.Channels {
@@ -123,7 +124,10 @@ func (config *TuxivConfig) CondaFile(localConfDir string, remoteWorkDir string) 
 	return false
 }
 
-func (config *TuxivConfig) SlurmFile(submitEnv *TACCGlobalEnv, localConfDir string, remoteWorkDir string, remoteUserDir string) (map[string]string, bool) {
+func (config *TuxivConfig) SlurmFile(submitEnv *TACCGlobalEnv) (map[string]string, bool) {
+	localConfDir := submitEnv.LocalConfDir
+	remoteWorkDir := submitEnv.RemoteWorkDir
+	remoteUserDir := submitEnv.RemoteUserDir
 	TACCDir := make(map[string]string)
 	f, err := os.Create(filepath.Join(localConfDir, "run.slurm"))
 	if err != nil {
@@ -165,7 +169,8 @@ func (config *TuxivConfig) SlurmFile(submitEnv *TACCGlobalEnv, localConfDir stri
 	return TACCDir, false
 }
 
-func (config *TuxivConfig) CityFile(localConfDir string) bool {
+func (config *TuxivConfig) CityFile(submitEnv *TACCGlobalEnv) bool {
+	localConfDir := submitEnv.LocalConfDir
 	f, err := os.Create(filepath.Join(localConfDir, "citynet.sh"))
 	if err != nil {
 		log.Println("Create Datasets config file failed.")
@@ -182,7 +187,8 @@ func (config *TuxivConfig) CityFile(localConfDir string) bool {
 	return false
 }
 
-func (config *TuxivConfig) RunshFile(tcloudcli *TcloudCli, localWorkDir string) bool {
+func (config *TuxivConfig) RunshFile(tcloudcli *TcloudCli, submitEnv *TACCGlobalEnv) bool {
+	localWorkDir := submitEnv.LocalWorkDir
 	f, err := os.Create(filepath.Join(localWorkDir, "run.sh"))
 	if err != nil {
 		log.Println("Create run.sh file failed.")
@@ -194,7 +200,8 @@ func (config *TuxivConfig) RunshFile(tcloudcli *TcloudCli, localWorkDir string) 
 	homeDir := fmt.Sprintf("%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName)
 	str := fmt.Sprintf("#!/bin/bash\nsource %s/%s", homeDir, CONDA_SHELL_PATH)
 	fmt.Fprintln(w, str)
-	str = fmt.Sprintf("conda activate %s\n", config.Environment.Name)
+	hashString := config.EnvNameGenerator()
+	str = fmt.Sprintf("conda activate %s\n", config.Environment.Name + "-" + hashString)
 	fmt.Fprintln(w, str)
 
 	for _, s := range config.Entrypoint {
@@ -256,7 +263,7 @@ func ReplaceGlobalEnv(str string, submitEnv *TACCGlobalEnv) string {
 	str = strings.Replace(str, "$TACC_SLURM_USERLOG", slurm_log, -1)
 	return str
 }
-func (config *TuxivConfig) EnvNameGenerator(repoName string) string{
+func (config *TuxivConfig) EnvNameGenerator() string{
 	// Parse package (with version) list from conda.yaml
 	dep := config.Environment.Dependencies
 	// Sort the package by Alphabetical order and contact as a string
@@ -266,6 +273,5 @@ func (config *TuxivConfig) EnvNameGenerator(repoName string) string{
 	data := []byte(jointDep)
 	hashValue := md5.Sum(data)
 	hashString := hex.EncodeToString(hashValue[:])
-	config.Environment.Name = hashString
 	return hashString	
 }

@@ -263,7 +263,9 @@ func (tcloudcli *TcloudCli) BuildEnv(submitEnv *TACCGlobalEnv, args ...string) m
 		log.Println("Parse tuxiv config file failed.")
 		os.Exit(-1)
 	}
-	envName := config.Environment.Name
+	hashString := config.EnvNameGenerator()
+	envName := config.Environment.Name + "-" + hashString
+	fmt.Println("env name is : " + envName)
 	if err = tcloudcli.UploadRepo(repoName, localWorkDir); err == true {
 		log.Println("Upload repository env failed")
 		os.Exit(-1)
@@ -613,7 +615,7 @@ func (tcloudcli *TcloudCli) CondaCacheCheck(envName string) bool {
 		log.Println("Failed to get env list")
 		os.Exit(1)
 	} else {
-		envList := strings.Split(strings.Trim(string(out), "\n "), "\n")
+		envList = strings.Split(strings.Trim(string(out), "\n "), "\n")
 		for i, env := range envList {
 			if i > 2 {
 				envList[i] = strings.Trim(strings.Split(env, "/")[0], " ")
@@ -623,7 +625,10 @@ func (tcloudcli *TcloudCli) CondaCacheCheck(envName string) bool {
 		fmt.Println(envList)
 	}
 	// Check if there is a hit, if so, return true, otherwise, return false
+	fmt.Println(len(envList))
 	for _, env := range envList {
+		fmt.Println("env: " + env)
+		fmt.Println("envName: " + envName)
 		if env == envName {
 			return true
 		}
