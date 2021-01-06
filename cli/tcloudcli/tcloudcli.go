@@ -265,7 +265,6 @@ func (tcloudcli *TcloudCli) BuildEnv(submitEnv *TACCGlobalEnv, args ...string) m
 	}
 	hashString := config.EnvNameGenerator()
 	envName := config.Environment.Name + "-" + hashString
-	fmt.Println("env name is : " + envName)
 	if err = tcloudcli.UploadRepo(repoName, localWorkDir); err == true {
 		log.Println("Upload repository env failed")
 		os.Exit(-1)
@@ -609,19 +608,20 @@ func (tcloudcli *TcloudCli) XDataset(args ...string) bool {
 
 func (tcloudcli *TcloudCli) CondaCacheCheck(envName string) bool {
 	// Get env list from remote
-	cmd := fmt.Sprintf("%s env list", tcloudcli.clusterConfig.Conda)
+	cmd := fmt.Sprintf("ls -ltr %s/%s/.Miniconda3/envs", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName)
 	var envList []string
 	if out, err := tcloudcli.RemoteExecCmdOutput(cmd); err == true {
 		log.Println("Failed to get env list")
 		os.Exit(1)
 	} else {
-		envList = strings.Split(strings.Trim(string(out), "\n "), "\n")
+		envList = strings.Split(strings.Trim(string(out),"\n"), "\n")
 		for i, env := range envList {
-			if i > 2 {
-				envList[i] = strings.Trim(strings.Split(env, "/")[0], " ")
+			if i > 0 {
+				splitString := strings.Split(env, " ")
+				envList[i] = strings.Trim(splitString[len(splitString)-1], string(13))
 			}
 		}
-		envList = envList[3:]
+		envList = envList[1:]
 	}
 	// Check if there is a hit, if so, return true, otherwise, return false
 	for _, env := range envList {
