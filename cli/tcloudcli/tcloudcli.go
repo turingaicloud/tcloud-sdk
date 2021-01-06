@@ -264,7 +264,8 @@ func (tcloudcli *TcloudCli) BuildEnv(submitEnv *TACCGlobalEnv, args ...string) m
 		os.Exit(-1)
 	}
 	hashString := config.EnvNameGenerator()
-	envName := config.Environment.Name + "-" + hashString
+	// envName := config.Environment.Name + "-" + hashString
+	envName := hashString
 	if err = tcloudcli.UploadRepo(repoName, localWorkDir); err == true {
 		log.Println("Upload repository env failed")
 		os.Exit(-1)

@@ -107,7 +107,8 @@ func (config *TuxivConfig) CondaFile(submitEnv *TACCGlobalEnv) bool {
 	w := bufio.NewWriter(f)
 	// Conda file
 	hashString := config.EnvNameGenerator()
-	fmt.Fprintln(w, fmt.Sprintf("name: %s", config.Environment.Name + "-" + hashString))
+	// fmt.Fprintln(w, fmt.Sprintf("name: %s", config.Environment.Name + "-" + hashString))
+	fmt.Fprintln(w, fmt.Sprintf("name: %s", hashString))
 	// Channels
 	fmt.Fprintln(w, fmt.Sprintf("channels:"))
 	for _, s := range config.Environment.Channels {
@@ -201,7 +202,8 @@ func (config *TuxivConfig) RunshFile(tcloudcli *TcloudCli, submitEnv *TACCGlobal
 	str := fmt.Sprintf("#!/bin/bash\nsource %s/%s", homeDir, CONDA_SHELL_PATH)
 	fmt.Fprintln(w, str)
 	hashString := config.EnvNameGenerator()
-	str = fmt.Sprintf("conda activate %s\n", config.Environment.Name + "-" + hashString)
+	// str = fmt.Sprintf("conda activate %s\n", config.Environment.Name + "-" + hashString)
+	str = fmt.Sprintf("conda activate %s\n", hashString)
 	fmt.Fprintln(w, str)
 
 	for _, s := range config.Entrypoint {
