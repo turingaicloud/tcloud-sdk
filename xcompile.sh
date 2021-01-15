@@ -9,6 +9,11 @@ WINDOWS_MAKEFILE="Makefile.windows"
 QUICKSTART_PATH="/Users/xcwan/Desktop/Workspace/Project/quickstart"
 TCLOUD_PATH=$PWD
 
+# Makedir
+mkdir -p ${QUICKSTART_PATH}/bin/linux-amd64-v${VERSION}
+mkdir -p ${QUICKSTART_PATH}/bin/windows-amd64-v${VERSION}
+mkdir -p ${QUICKSTART_PATH}/bin/macos-amd64-v${VERSION}
+
 cd cli
 
 # Linux
