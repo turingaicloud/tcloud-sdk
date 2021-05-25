@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-var DEFAULT_CLUSTERCONFIG_PATH = "/mnt/sharefs/home/.clusterconfig"
+var DEFAULT_CLUSTERCONFIG_PATH = "/mnt/home/.clusterconfig"
 var CityNetAPI = "http://localhost:8088/datasets"
 
 type TcloudCli struct {
@@ -209,7 +209,7 @@ func (tcloudcli *TcloudCli) SendRepoToCluster(repoName string, src string) (stri
 
 	// TODO(A bit wrong when transmit file. Not the same directory as src)
 	dst := tcloudcli.userConfig.SSHpath[0]
-	dst = fmt.Sprintf("%s@%s:%s/%s/%s", tcloudcli.userConfig.UserName, dst, tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"])
+	dst = fmt.Sprintf("%s@%s:%s", tcloudcli.userConfig.UserName, dst, filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"]))
 	cmd := exec.Command("scp", "-P", tcloudcli.userConfig.Port, prefix, "-i", tcloudcli.userConfig.AuthFile, src, dst)
 
 	if _, err := cmd.CombinedOutput(); err != nil {
@@ -219,9 +219,9 @@ func (tcloudcli *TcloudCli) SendRepoToCluster(repoName string, src string) (stri
 	if len(tcloudcli.userConfig.SSHpath) < 2 {
 		return dst, false
 	} else if len(tcloudcli.userConfig.SSHpath) == 2 {
-		src := fmt.Sprintf("%s/%s/%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"], repoName)
+		src := filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"], repoName)
 		dst := tcloudcli.userConfig.SSHpath[1]
-		dst = fmt.Sprintf("%s@%s:%s/%s/%s", tcloudcli.userConfig.UserName, dst, tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"])
+		dst = fmt.Sprintf("%s@%s:%s", tcloudcli.userConfig.UserName, dst, filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"]))
 		cmd := shellquote.Join("scp", "-P", tcloudcli.userConfig.Port, prefix, src, dst)
 		if err := tcloudcli.RemoteExecCmd(cmd); err == true {
 			log.Println("Failed to send repo from Host:", tcloudcli.userConfig.SSHpath[0], " to Host:", tcloudcli.userConfig.SSHpath[1])
@@ -309,9 +309,9 @@ func (tcloudcli *TcloudCli) AddSoftLink(datasets []string) bool {
 		var config Dataset
 		json.Unmarshal(out, &config)
 
-		datasetpath := fmt.Sprintf("%s%s", tcloudcli.clusterConfig.DatasetDir, config.Path)
-		remoteUserDir := fmt.Sprintf("%s/%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
-		remoteDir := fmt.Sprintf("%s/%s", remoteUserDir, config.Name)
+		datasetpath := filepath.Join(tcloudcli.clusterConfig.DatasetDir, config.Path)
+		remoteUserDir := filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
+		remoteDir := filepath.Join(remoteUserDir, config.Name)
 
 		cmd = fmt.Sprintf("%s rm -f %s", tcloudcli.prefix, remoteDir)
 		if err := tcloudcli.RemoteExecCmd(cmd); err == true {
@@ -330,9 +330,9 @@ func (tcloudcli *TcloudCli) AddSoftLink(datasets []string) bool {
 }
 
 func (tcloudcli *TcloudCli) CondaCreate(repoName string, envName string, randString string) bool {
-	homeDir := fmt.Sprintf("%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName)
-	condaBin := fmt.Sprintf("%s/%s", homeDir, tcloudcli.clusterConfig.Conda)
-	condaYaml := fmt.Sprintf("%s/%s/%s/configurations/conda.yaml", homeDir, tcloudcli.clusterConfig.Dirs["workdir"], repoName)
+	homeDir := filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName)
+	condaBin := filepath.Join(homeDir, tcloudcli.clusterConfig.Conda)
+	condaYaml := filepath.Join(homeDir, tcloudcli.clusterConfig.Dirs["workdir"], repoName, "configurations", "conda.yaml")
 	cmd := fmt.Sprintf("%s %s env create -f %s -n %s\n", tcloudcli.prefix, condaBin, condaYaml, envName)
 	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
 		log.Println("Failed to run cmd in CondaCreate")
@@ -343,8 +343,8 @@ func (tcloudcli *TcloudCli) CondaCreate(repoName string, envName string, randStr
 	return false
 }
 func (tcloudcli *TcloudCli) CondaRemove(envName string) bool {
-	homeDir := fmt.Sprintf("%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName)
-	condaBin := fmt.Sprintf("%s/%s", homeDir, tcloudcli.clusterConfig.Conda)
+	homeDir := filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName)
+	condaBin := filepath.Join(homeDir, tcloudcli.clusterConfig.Conda)
 	cmd := fmt.Sprintf("%s %s remove -n %s --all -y", tcloudcli.prefix, condaBin, envName)
 	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
 		log.Println("Failed to run cmd in CondaRemove")
@@ -381,17 +381,17 @@ func RandString(n int) string {
 func (tcloudcli *TcloudCli) XSubmit(args ...string) bool {
 	var submitEnv = NewGlobalEnv()
 
-	cmd := fmt.Sprintf("mkdir -p  %s/%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"])
+	cmd := fmt.Sprintf("mkdir -p  %s", filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"]))
 	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
 		log.Println("Failed to create remote workdir")
 		return true
 	}
-	cmd = fmt.Sprintf("mkdir -p  %s/%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
+	cmd = fmt.Sprintf("mkdir -p  %s", filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"]))
 	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
 		log.Println("Failed to create remote userdir")
 		return true
 	}
-	cmd = fmt.Sprintf("mkdir -p  %s/%s/%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"], submitEnv.SlurmUserlog)
+	cmd = fmt.Sprintf("mkdir -p  %s", filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"], submitEnv.SlurmUserlog))
 	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
 		log.Println("Failed to create remote workdir")
 		return true
@@ -399,8 +399,7 @@ func (tcloudcli *TcloudCli) XSubmit(args ...string) bool {
 
 	TACCDir := tcloudcli.BuildEnv(submitEnv, args...)
 
-	// homeDir := fmt.Sprintf("%s/%s/%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"], submitEnv.RepoName)
-	cmd = fmt.Sprintf("%s sbatch %s/configurations/run.slurm", tcloudcli.prefix, submitEnv.RemoteWorkDir)
+	cmd = fmt.Sprintf("%s sbatch %s", tcloudcli.prefix, filepath.Join(submitEnv.RemoteWorkDir, "configurations", "run.slurm"))
 
 	// Create `RUNDIR` in remote and run cmd at `RUNDIR`
 	cmd = fmt.Sprintf("mkdir -p %s && cd %s && %s", TACCDir["TACC_WORKDIR"], TACCDir["TACC_WORKDIR"], cmd)
@@ -463,7 +462,7 @@ func (tcloudcli *TcloudCli) XInstall(args ...string) bool {
 		log.Println("Parse tuxiv config file failed.")
 		os.Exit(-1)
 	}
-	condaYaml := fmt.Sprintf("./configurations/conda.yaml")
+	condaYaml := filepath.Join(".", "configurations", "conda.yaml")
 	removeCmd := exec.Command(tcloudcli.clusterConfig.Conda, "env", "remove", "-n", config.Environment.Name)
 	if out, err := removeCmd.CombinedOutput(); err != nil {
 		log.Println("Failed to create local environment. Err: ", err.Error())
@@ -500,8 +499,8 @@ func (tcloudcli *TcloudCli) XDownload(IsDir bool, args ...string) bool {
 		remotesrc = src
 	}
 
-	remoteUserDir := fmt.Sprintf("%s/%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
-	remotesrc = fmt.Sprintf("%s/%s", remoteUserDir, remotesrc)
+	remoteUserDir := filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
+	remotesrc = filepath.Join(remoteUserDir, remotesrc)
 
 	if err := tcloudcli.RecvFromCluster(remotesrc, dst, IsDir); err {
 		if IsDir {
@@ -539,10 +538,10 @@ func (tcloudcli *TcloudCli) XCP(IsDir bool, args ...string) bool {
 		remotedst = dst
 	}
 
-	remoteWorkDir := fmt.Sprintf("%s/%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"])
-	remoteUserDir := fmt.Sprintf("%s/%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
-	remotesrc = fmt.Sprintf("%s/%s", remoteWorkDir, remotesrc)
-	remotedst = fmt.Sprintf("%s/%s", remoteUserDir, remotedst)
+	remoteWorkDir := filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"])
+	remoteUserDir := filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
+	remotesrc = filepath.Join(remoteWorkDir, remotesrc)
+	remotedst = filepath.Join(remoteUserDir, remotedst)
 
 	if IsDir {
 		cmd := fmt.Sprintf("cp -r %s %s", remotesrc, remotedst)
@@ -578,8 +577,8 @@ func (tcloudcli *TcloudCli) XLS(IsLong bool, IsReverse bool, IsAll bool, args ..
 		flags += " -a"
 	}
 
-	remoteUserDir := fmt.Sprintf("%s/%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
-	remote := fmt.Sprintf("%s/%s", remoteUserDir, src)
+	remoteUserDir := filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
+	remote := filepath.Join(remoteUserDir, src)
 
 	cmd := fmt.Sprintf("ls %s %s", flags, remote)
 	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
@@ -609,13 +608,13 @@ func (tcloudcli *TcloudCli) XDataset(args ...string) bool {
 
 func (tcloudcli *TcloudCli) CondaCacheCheck(envName string) bool {
 	// Get env list from remote
-	cmd := fmt.Sprintf("ls -ltr %s/%s/.Miniconda3/envs", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName)
+	cmd := filepath.Join("ls -ltr %s", filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, ".Miniconda3", "envs"))
 	var envList []string
 	if out, err := tcloudcli.RemoteExecCmdOutput(cmd); err == true {
 		log.Println("Failed to get env list")
 		os.Exit(1)
 	} else {
-		envList = strings.Split(strings.Trim(string(out),"\n"), "\n")
+		envList = strings.Split(strings.Trim(string(out), "\n"), "\n")
 		for i, env := range envList {
 			if i > 0 {
 				splitString := strings.Split(env, " ")

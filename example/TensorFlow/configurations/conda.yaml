@@ -1,4 +1,0 @@
-name: tf
-channels:
-dependencies:
-  - tensorflow=1.15

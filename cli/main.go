@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/spf13/cobra"
 	"log"
 
@@ -12,7 +11,7 @@ import (
 	"tcloud-sdk/cli/tcloudcli"
 )
 
-var VERSION = "0.1.0"
+var VERSION = "0.2.0"
 
 func main() {
 	home := homeDIR()
@@ -30,7 +29,7 @@ func main() {
 func newTcloudCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 	var tcloudCmd = &cobra.Command{
 		Use:   "tcloud",
-		Short: "TACC Command-line Interface v" + VERSION,
+		Short: "TACC Command-line Interface " + VERSION,
 	}
 	tcloudCmd.AddCommand(cmd.NewSubmitCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewConfigCommand(cli))
@@ -56,7 +55,7 @@ func TcloudInit(home string) bool {
 	log.SetPrefix("[Tcloud Error] ")
 	log.SetFlags(log.Ldate | log.Lshortfile)
 
-	tcloudDIR := fmt.Sprintf("%s/.tcloud", home)
+	tcloudDIR := filepath.Join(home, ".tcloud")
 	init_cmd := exec.Command("mkdir", "-p", tcloudDIR)
 	if _, err := init_cmd.CombinedOutput(); err != nil {
 		log.Println("Failed to obtain tcloud metadata. Error message:", err.Error())

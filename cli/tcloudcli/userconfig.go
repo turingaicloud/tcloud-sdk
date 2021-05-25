@@ -15,7 +15,7 @@ type UserConfig struct {
 	path     string   `json: "path"`
 }
 
-var DEFAULT_SSHPATH = "sing.cse.ust.hk"
+var DEFAULT_SSHPATH = "ising.cse.ust.hk"
 var DEFAULT_AUTHFILE = ".ssh/id_rsa"
 var DEFAULT_PORT = "30041"
 
