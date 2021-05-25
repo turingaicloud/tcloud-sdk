@@ -25,6 +25,9 @@ install : ${INSTALL_BIN}
 clean :
 		rm -rf bin
 		rm -f ${GOPATH}/bin/tcloud
-		rm -rf configurations
-		rm -f run.sh
-		rm -rf ${GOPATH}/src/tcloud-sdk/examples/TuXiv_example/configurations
+
+		cd ${GOPATH}/src/tcloud-sdk/example && \
+		for x in MXNet PyTorch TensorFlow helloworld; do \
+			rm -rf "$$x"/configurations; \
+			rm -f "$$x"/run.sh; \
+		done
