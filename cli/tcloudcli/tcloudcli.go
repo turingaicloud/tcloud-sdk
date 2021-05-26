@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-var DEFAULT_CLUSTERCONFIG_PATH = "/mnt/home/.clusterconfig"
+var DEFAULT_CLUSTERCONFIG_PATH = "/mnt/data/.clusterconfig"
 var CityNetAPI = "http://localhost:8088/datasets"
 
 type TcloudCli struct {
