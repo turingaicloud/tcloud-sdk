@@ -2,6 +2,8 @@ package tcloudcli
 
 import (
 	"bufio"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	yaml "gopkg.in/yaml.v2"
 	"io/ioutil"
@@ -9,10 +11,8 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 	"sort"
-	"crypto/md5"
-	"encoding/hex"
+	"strings"
 )
 
 type TuxivConfig struct {
@@ -55,15 +55,15 @@ func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, submitEnv *TACCG
 		submitEnv.LocalConfDir = filepath.Join(submitEnv.LocalWorkDir, "configurations")
 		dirlist := strings.Split(submitEnv.LocalWorkDir, "/")
 		submitEnv.RepoName = dirlist[len(dirlist)-1]
-		submitEnv.RemoteWorkDir = fmt.Sprintf("%s/%s/%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"], submitEnv.RepoName)
-		submitEnv.RemoteUserDir = fmt.Sprintf("%s/%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
+		submitEnv.RemoteWorkDir = filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"], submitEnv.RepoName)
+		submitEnv.RemoteUserDir = filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
 	} else {
 		submitEnv.LocalWorkDir, _ = filepath.Abs(path.Dir(args[0]))
 		submitEnv.LocalConfDir = filepath.Join(submitEnv.LocalWorkDir, "configurations")
 		dirlist := strings.Split(submitEnv.LocalWorkDir, "/")
 		submitEnv.RepoName = dirlist[len(dirlist)-1]
-		submitEnv.RemoteWorkDir = fmt.Sprintf("%s/%s/%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"], submitEnv.RepoName)
-		submitEnv.RemoteUserDir = fmt.Sprintf("%s/%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
+		submitEnv.RemoteWorkDir = filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"], submitEnv.RepoName)
+		submitEnv.RemoteUserDir = filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
 	}
 	yamlFile, err := ioutil.ReadFile(tuxivFile)
 	if err != nil {
@@ -198,7 +198,7 @@ func (config *TuxivConfig) RunshFile(tcloudcli *TcloudCli, submitEnv *TACCGlobal
 	defer f.Close()
 
 	w := bufio.NewWriter(f)
-	homeDir := fmt.Sprintf("%s/%s", tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName)
+	homeDir := filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName)
 	str := fmt.Sprintf("#!/bin/bash\nsource %s/%s", homeDir, CONDA_SHELL_PATH)
 	fmt.Fprintln(w, str)
 	hashString := config.EnvNameGenerator()
@@ -260,12 +260,12 @@ func ReplaceGlobalEnv(str string, submitEnv *TACCGlobalEnv) string {
 	str = strings.Replace(str, "${TACC_USERDIR}", submitEnv.RemoteUserDir, -1)
 	str = strings.Replace(str, "$TACC_USERDIR", submitEnv.RemoteUserDir, -1)
 
-	slurm_log := fmt.Sprintf("%s/%s", submitEnv.RemoteUserDir, submitEnv.SlurmUserlog)
+	slurm_log := filepath.Join(submitEnv.RemoteUserDir, submitEnv.SlurmUserlog)
 	str = strings.Replace(str, "${TACC_SLURM_USERLOG}", slurm_log, -1)
 	str = strings.Replace(str, "$TACC_SLURM_USERLOG", slurm_log, -1)
 	return str
 }
-func (config *TuxivConfig) EnvNameGenerator() string{
+func (config *TuxivConfig) EnvNameGenerator() string {
 	// Parse package (with version) list from conda.yaml
 	dep := config.Environment.Dependencies
 	// Sort the package by Alphabetical order and contact as a string
@@ -275,5 +275,5 @@ func (config *TuxivConfig) EnvNameGenerator() string{
 	data := []byte(jointDep)
 	hashValue := md5.Sum(data)
 	hashString := hex.EncodeToString(hashValue[:])
-	return hashString	
+	return hashString
 }

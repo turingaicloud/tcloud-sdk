@@ -608,7 +608,7 @@ func (tcloudcli *TcloudCli) XDataset(args ...string) bool {
 
 func (tcloudcli *TcloudCli) CondaCacheCheck(envName string) bool {
 	// Get env list from remote
-	cmd := filepath.Join("ls -ltr %s", filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, ".Miniconda3", "envs"))
+	cmd := fmt.Sprintf("ls -ltr %s", filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, ".Miniconda3", "envs"))
 	var envList []string
 	if out, err := tcloudcli.RemoteExecCmdOutput(cmd); err == true {
 		log.Println("Failed to get env list")
