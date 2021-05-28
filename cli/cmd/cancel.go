@@ -9,7 +9,7 @@ func NewCancelCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "cancel",
 		Short: "Cancel job",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.NoArgs,
 		Run: func(cmd *cobra.Command, args []string) {
 			job, _ := cmd.Flags().GetString("job")
 			cli.XCancel(job, args...)
@@ -17,6 +17,6 @@ func NewCancelCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 	}
 
 	var job string
-	cmd.Flags().StringVarP(&job, "job", "j", "", "Show <JOB_ID> status")
+	cmd.Flags().StringVarP(&job, "job", "j", "", "Cancel <JOB_ID>")
 	return cmd
 }

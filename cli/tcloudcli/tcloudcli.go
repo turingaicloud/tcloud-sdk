@@ -590,7 +590,7 @@ func (tcloudcli *TcloudCli) XLS(IsLong bool, IsReverse bool, IsAll bool, args ..
 
 func (tcloudcli *TcloudCli) XCancel(job string, args ...string) bool {
 	var cmd string
-	cmd = fmt.Sprintf("%s squeue -j %s", tcloudcli.prefix, job)
+	cmd = fmt.Sprintf("%s scancel %s", tcloudcli.prefix, job)
 	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
 		log.Printf("Failed to cancel job %s", job)
 		return true
