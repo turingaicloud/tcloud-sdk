@@ -1,7 +1,7 @@
 # TCLOUD-SDK
 ## Command-line Interface used for TACC job submission.
 ```
-TCLOUD Command-line Interface v0.2.3
+TCLOUD Command-line Interface v0.2.4
 
 Usage:
 tcloud [command] [flags] [args]
@@ -9,6 +9,7 @@ tcloud [command] [flags] [args]
 Available Commands:
     tcloud init
     tcloud config [-u/-f] [args]
+    tcloud upload <local_dirpath> [<remote_dirpath>]
     tcloud download [<filepath>]
     tcloud add [<dependency_name>]
     tcloud submit [<path_to_repo>]
@@ -16,7 +17,7 @@ Available Commands:
     tcloud install [<path_to_repo>]
     tcloud log [-j] [<JOB_ID>]
     tcloud cancel [-j] [<JOB_ID>]
-    tcloud ls [<filepath>]
+    tcloud ls [<dirpath>]
 
 Use "tcloud [command] --help" for more information about commands.
 ```

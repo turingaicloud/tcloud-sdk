@@ -11,7 +11,7 @@ import (
 	"tcloud-sdk/cli/tcloudcli"
 )
 
-var VERSION = "0.2.3"
+var VERSION = "0.2.4"
 
 func main() {
 	home := homeDIR()
@@ -36,6 +36,7 @@ func newTcloudCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 	tcloudCmd.AddCommand(cmd.NewPSCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewCancelCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewInitCommand(cli))
+	tcloudCmd.AddCommand(cmd.NewUploadCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewDownloadCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewAddCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewInstallCommand(cli))

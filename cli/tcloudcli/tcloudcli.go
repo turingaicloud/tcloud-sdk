@@ -196,7 +196,34 @@ func (tcloudcli *TcloudCli) RemoteExecCmdOutput(cmd string) ([]byte, bool) {
 	return b.Bytes(), false
 }
 
-func (tcloudcli *TcloudCli) SendRepoToCluster(repoName string, src string) (string, bool) {
+func (tcloudcli *TcloudCli) UploadToUserDir(src string, dstDir string) (string, bool) {
+	f, err := os.Stat(src)
+	if err != nil {
+		log.Println("Failed to send to cluster. %s not exists.", src)
+		return "", true
+	}
+	prefix := ""
+	if mode := f.Mode(); mode.IsDir() {
+		prefix = "-r"
+	}
+
+	dst := tcloudcli.userConfig.SSHpath[0]
+	dst = fmt.Sprintf("%s@%s:%s", tcloudcli.userConfig.UserName, dst, filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"], dstDir))
+	cmd := exec.Command("scp", "-P", tcloudcli.userConfig.Port, prefix, "-i", tcloudcli.userConfig.AuthFile, src, dst)
+
+	if _, err := cmd.CombinedOutput(); err != nil {
+		log.Println("Failed to run cmd in UploadToUserDir ", err.Error())
+		return dst, true
+	}
+	if len(tcloudcli.userConfig.SSHpath) < 2 {
+		return dst, false
+	} else {
+		log.Println("Not support multi-hop send")
+		return dst, true
+	}
+}
+
+func (tcloudcli *TcloudCli) UploadToWorkerDir(dirName string, src string) (string, bool) {
 	f, err := os.Stat(src)
 	if err != nil {
 		log.Println("Failed to send to cluster. %s not exists.", src)
@@ -213,13 +240,13 @@ func (tcloudcli *TcloudCli) SendRepoToCluster(repoName string, src string) (stri
 	cmd := exec.Command("scp", "-P", tcloudcli.userConfig.Port, prefix, "-i", tcloudcli.userConfig.AuthFile, src, dst)
 
 	if _, err := cmd.CombinedOutput(); err != nil {
-		log.Println("Failed to run cmd in SendRepoToCluster ", err.Error())
+		log.Println("Failed to run cmd in UploadToWorkerDir ", err.Error())
 		return dst, true
 	}
 	if len(tcloudcli.userConfig.SSHpath) < 2 {
 		return dst, false
 	} else if len(tcloudcli.userConfig.SSHpath) == 2 {
-		src := filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"], repoName)
+		src := filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"], dirName)
 		dst := tcloudcli.userConfig.SSHpath[1]
 		dst = fmt.Sprintf("%s@%s:%s", tcloudcli.userConfig.UserName, dst, filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"]))
 		cmd := shellquote.Join("scp", "-P", tcloudcli.userConfig.Port, prefix, src, dst)
@@ -287,7 +314,7 @@ func (tcloudcli *TcloudCli) BuildEnv(submitEnv *TACCGlobalEnv, args ...string) m
 }
 
 func (tcloudcli *TcloudCli) UploadRepo(repoName string, localWorkDir string) bool {
-	dst, err := tcloudcli.SendRepoToCluster(repoName, localWorkDir)
+	dst, err := tcloudcli.UploadToWorkerDir(repoName, localWorkDir)
 	if err == true {
 		log.Println("Failed to upload repo to ", dst)
 		return true
@@ -478,6 +505,22 @@ func (tcloudcli *TcloudCli) XInstall(args ...string) bool {
 		fmt.Printf("%s\n", string(out))
 	}
 	fmt.Println("Environment \"", config.Environment.Name, "\" created locally.")
+	return false
+}
+
+func (tcloudcli *TcloudCli) XUpload(args ...string) bool {
+	var src, dst string
+	src = args[0]
+	if len(args) > 1 {
+		dst = args[1]
+	} else {
+		dst = "."
+	}
+
+	if _, err := tcloudcli.UploadToUserDir(src, dst); err {
+		log.Printf("Failed to upload %s to %s.", src, dst)
+		return true
+	}
 	return false
 }
 
