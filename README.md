@@ -9,7 +9,7 @@ tcloud [command] [flags] [args]
 Available Commands:
     tcloud init
     tcloud config [-u/-f] [args]
-    tcloud upload <local_dirpath> [<remote_dirpath>]
+    tcloud upload [-c] <local_dirpath> [<remote_dirpath>]
     tcloud download [<filepath>]
     tcloud add [<dependency_name>]
     tcloud submit [<path_to_repo>]
