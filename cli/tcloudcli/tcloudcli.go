@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	shellquote "github.com/gonuts/go-shellquote"
 	"golang.org/x/crypto/ssh"
 	"io/ioutil"
 	"log"
@@ -196,69 +195,83 @@ func (tcloudcli *TcloudCli) RemoteExecCmdOutput(cmd string) ([]byte, bool) {
 	return b.Bytes(), false
 }
 
-func (tcloudcli *TcloudCli) UploadToUserDir(src string, dstDir string) (string, bool) {
-	f, err := os.Stat(src)
+func (tcloudcli *TcloudCli) UploadToUserDir(iscover bool, src string, dstDir string) (string, bool) {
+	_, err := os.Stat(src)
 	if err != nil {
 		log.Println("Failed to send to cluster. %s not exists.", src)
 		return "", true
 	}
-	prefix := ""
-	if mode := f.Mode(); mode.IsDir() {
-		prefix = "-r"
-	}
 
+	var cmd *exec.Cmd
 	dst := tcloudcli.userConfig.SSHpath[0]
 	dst = fmt.Sprintf("%s@%s:%s", tcloudcli.userConfig.UserName, dst, filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"], dstDir))
-	cmd := exec.Command("scp", "-P", tcloudcli.userConfig.Port, prefix, "-i", tcloudcli.userConfig.AuthFile, src, dst)
-
-	if _, err := cmd.CombinedOutput(); err != nil {
-		log.Println("Failed to run cmd in UploadToUserDir ", err.Error())
-		return dst, true
-	}
-	if len(tcloudcli.userConfig.SSHpath) < 2 {
-		return dst, false
+	ssh_config := fmt.Sprintf("/usr/bin/ssh -p %s -i %s", tcloudcli.userConfig.Port, tcloudcli.userConfig.AuthFile)
+	if iscover {
+		cmd = exec.Command("rsync", "-av", "--progress", "--delete", "--rsh", ssh_config, src, dst)
 	} else {
-		log.Println("Not support multi-hop send")
+		cmd = exec.Command("rsync", "-av", "--progress", "--rsh", ssh_config, src, dst)
+	}
+
+	stdout, err := cmd.StdoutPipe()
+	cmd.Stderr = cmd.Stdout
+	if err != nil {
+		log.Printf("Failed to bind StdoutPipe")
 		return dst, true
 	}
+
+	if err = cmd.Start(); err != nil {
+		log.Printf("Failed to start command")
+		return dst, true
+	}
+	for {
+		tmp := make([]byte, 1024)
+		_, err := stdout.Read(tmp)
+		fmt.Print(string(tmp))
+		if err != nil {
+			break
+		}
+	}
+
+	if err = cmd.Wait(); err != nil {
+		return dst, true
+	}
+	return dst, false
 }
 
 func (tcloudcli *TcloudCli) UploadToWorkerDir(dirName string, src string) (string, bool) {
-	f, err := os.Stat(src)
+	_, err := os.Stat(src)
 	if err != nil {
 		log.Println("Failed to send to cluster. %s not exists.", src)
 		return "", true
 	}
-	prefix := ""
-	if mode := f.Mode(); mode.IsDir() {
-		prefix = "-r"
-	}
 
-	// TODO(A bit wrong when transmit file. Not the same directory as src)
 	dst := tcloudcli.userConfig.SSHpath[0]
-	dst = fmt.Sprintf("%s@%s:%s", tcloudcli.userConfig.UserName, dst, filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"]))
-	cmd := exec.Command("scp", "-P", tcloudcli.userConfig.Port, prefix, "-i", tcloudcli.userConfig.AuthFile, src, dst)
+	dst = fmt.Sprintf("%s@%s:%s", tcloudcli.userConfig.UserName, dst, filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"], dirName))
+	ssh_config := fmt.Sprintf("/usr/bin/ssh -p %s -i %s", tcloudcli.userConfig.Port, tcloudcli.userConfig.AuthFile)
+	cmd := exec.Command("rsync", "-av", "--progress", "--delete", "--rsh", ssh_config, src, dst)
 
-	if _, err := cmd.CombinedOutput(); err != nil {
-		log.Println("Failed to run cmd in UploadToWorkerDir ", err.Error())
+	stdout, err := cmd.StdoutPipe()
+	cmd.Stderr = cmd.Stdout
+	if err != nil {
 		return dst, true
 	}
-	if len(tcloudcli.userConfig.SSHpath) < 2 {
-		return dst, false
-	} else if len(tcloudcli.userConfig.SSHpath) == 2 {
-		src := filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"], dirName)
-		dst := tcloudcli.userConfig.SSHpath[1]
-		dst = fmt.Sprintf("%s@%s:%s", tcloudcli.userConfig.UserName, dst, filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"]))
-		cmd := shellquote.Join("scp", "-P", tcloudcli.userConfig.Port, prefix, src, dst)
-		if err := tcloudcli.RemoteExecCmd(cmd); err == true {
-			log.Println("Failed to send repo from Host:", tcloudcli.userConfig.SSHpath[0], " to Host:", tcloudcli.userConfig.SSHpath[1])
-			return dst, true
+
+	if err = cmd.Start(); err != nil {
+		return dst, true
+	}
+	for {
+		tmp := make([]byte, 1024)
+		_, err := stdout.Read(tmp)
+		fmt.Print(string(tmp))
+		if err != nil {
+			break
 		}
-		return dst, false
-	} else {
-		log.Println("Not support multi-hop send")
+	}
+
+	if err = cmd.Wait(); err != nil {
 		return dst, true
 	}
+	return dst, false
 }
 
 // SCP from SSHPath[0] to localhost
@@ -508,7 +521,7 @@ func (tcloudcli *TcloudCli) XInstall(args ...string) bool {
 	return false
 }
 
-func (tcloudcli *TcloudCli) XUpload(args ...string) bool {
+func (tcloudcli *TcloudCli) XUpload(iscover bool, args ...string) bool {
 	var src, dst string
 	src = args[0]
 	if len(args) > 1 {
@@ -517,8 +530,8 @@ func (tcloudcli *TcloudCli) XUpload(args ...string) bool {
 		dst = "."
 	}
 
-	if _, err := tcloudcli.UploadToUserDir(src, dst); err {
-		log.Printf("Failed to upload %s to %s.", src, dst)
+	if _, err := tcloudcli.UploadToUserDir(iscover, src, dst); err {
+		log.Printf("Failed to upload %s to %s", src, dst)
 		return true
 	}
 	return false
