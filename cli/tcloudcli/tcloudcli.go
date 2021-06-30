@@ -246,7 +246,7 @@ func (tcloudcli *TcloudCli) UploadToWorkerDir(dirName string, src string) (strin
 	}
 
 	dst := tcloudcli.userConfig.SSHpath[0]
-	dst = fmt.Sprintf("%s@%s:%s", tcloudcli.userConfig.UserName, dst, filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"], dirName))
+	dst = fmt.Sprintf("%s@%s:%s", tcloudcli.userConfig.UserName, dst, filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"]))
 	ssh_config := fmt.Sprintf("/usr/bin/ssh -p %s -i %s", tcloudcli.userConfig.Port, tcloudcli.userConfig.AuthFile)
 	cmd := exec.Command("rsync", "-av", "--progress", "--delete", "--rsh", ssh_config, src, dst)
 
