@@ -1,7 +1,7 @@
 # TCLOUD-SDK
 ## Command-line Interface used for TACC job submission.
 ```
-TCLOUD Command-line Interface v0.2.6
+TCLOUD Command-line Interface v0.2.7
 
 Usage:
 tcloud [command] [flags] [args]
@@ -15,7 +15,6 @@ Available Commands:
     tcloud submit [<path_to_repo>]
     tcloud ps [-j] [<JOB_ID>]
     tcloud install [<path_to_repo>]
-    tcloud log [-j] [<JOB_ID>]
     tcloud cancel [-j] [<JOB_ID>]
     tcloud ls [<dirpath>]
 
@@ -34,7 +33,7 @@ make install
 
 ## Configuration
 ### CLI Configuration
-1. Before using the tcloud CLI and submit ML jobs to TACC, you need to configure your TACC credentials. You can do this by running the `tcloud config` command:
+1. Before using the tcloud CLI to submit ML jobs, you need to configure your TACC credentials. You can do this by running the `tcloud config` command:
 ```
 $ tcloud config [-u/--username] MYUSERNAME
 $ tcloud config [-f/--file] MYPRIVATEFILEPATH
@@ -44,11 +43,11 @@ $ tcloud config [-f/--file] MYPRIVATEFILEPATH
 ### Job Configuration
 #### TUXIV.CONF
 
-You can use `tcloud init` to pull the latest cluster configurations from remote. There are four parts in `tuxiv.conf`, config different parts of job submission. Noted that `tuxiv.conf` follows the yaml format.
+You can use `tcloud init` to pull the latest cluster configuration from TACC. There are four parts in `tuxiv.conf` that configure different parts of job submission. Noted that `tuxiv.conf` follows **yaml format**.
 
 + Entrypoint
 
-  In this section, you should insert you shell commands to run your code line-by-line. The tcloud CLI will run the job as your configurations.
+  In this section, you should input you shell commands to run your code line-by-line. The tcloud CLI will help run the job according to your commands.
 
   ~~~yaml
   entrypoint:
@@ -57,7 +56,7 @@ You can use `tcloud init` to pull the latest cluster configurations from remote.
 
 + Environment
 
-  In this section, you can specify your conda configurations for virtual environment used in the cluster, including environment name, dependencies, source channels and so on.
+  In this section, you can specify your software  requirements, including the environment name, dependencies, source channels and so on. The tcloud CLI will help build your environment with *miniconda*.
 
   ~~~yaml
   environment:
@@ -82,7 +81,7 @@ You can use `tcloud init` to pull the latest cluster configurations from remote.
 
 + Datasets
 
-  In this section, you can specify the needed CityNet dataset name, and tcloud will help place the dataset access in `TACC_USERDIR`. You can view the table of CityNet datasets at [CityNet Dataset Info](https://docs.google.com/spreadsheets/d/18qi2YpYvuXkWns7KY9pHYQclhS1Yyt5ysqgZ4plYcTg/edit#gid=0).
+  In this section, you can specify your required CityNet dataset name, and tcloud will help place the dataset access in `TACC_USERDIR`. You can view the table of CityNet datasets at [CityNet Dataset Info](https://docs.google.com/spreadsheets/d/18qi2YpYvuXkWns7KY9pHYQclhS1Yyt5ysqgZ4plYcTg/edit#gid=0).
 
   ~~~yaml
   datasets:

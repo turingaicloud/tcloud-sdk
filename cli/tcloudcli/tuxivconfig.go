@@ -76,20 +76,20 @@ func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, submitEnv *TACCG
 	}
 
 	if err := config.CondaFile(submitEnv); err == true {
-		log.Println("Environment config file generate failed.")
+		log.Println("Failed to generate Environment config file")
 		return submitEnv.LocalWorkDir, submitEnv.RepoName, TACCDir, nil, true
 	}
 	var err1 bool
 	if TACCDir, err1 = config.SlurmFile(submitEnv); err1 == true {
-		log.Println("Slurm config file generate failed.")
+		log.Println("Failed to generate Slurm config file")
 		return submitEnv.LocalWorkDir, submitEnv.RepoName, TACCDir, config.Datasets, true
 	}
 	if err := config.CityFile(submitEnv); err == true {
-		log.Println("Datasets config file generate failed.")
+		log.Println("Failed to generate Datasets config file")
 		return submitEnv.LocalWorkDir, submitEnv.RepoName, TACCDir, config.Datasets, true
 	}
 	if err := config.RunshFile(tcloudcli, submitEnv); err == true {
-		log.Println("Run.sh exec file generate failed.")
+		log.Println("Failed to generate Run.sh exec file")
 		return submitEnv.LocalWorkDir, submitEnv.RepoName, TACCDir, config.Datasets, true
 	}
 	return submitEnv.LocalWorkDir, submitEnv.RepoName, TACCDir, config.Datasets, false
@@ -99,7 +99,7 @@ func (config *TuxivConfig) CondaFile(submitEnv *TACCGlobalEnv) bool {
 	localConfDir := submitEnv.LocalConfDir
 	f, err := os.Create(filepath.Join(localConfDir, "conda.yaml"))
 	if err != nil {
-		log.Println("Create Conda config file failed.")
+		log.Println("Failed to create Conda config file")
 		return true
 	}
 	defer f.Close()
@@ -132,7 +132,7 @@ func (config *TuxivConfig) SlurmFile(submitEnv *TACCGlobalEnv) (map[string]strin
 	TACCDir := make(map[string]string)
 	f, err := os.Create(filepath.Join(localConfDir, "run.slurm"))
 	if err != nil {
-		log.Println("Create Slurm config file failed.")
+		log.Println("Failed to create Slurm config file")
 		log.Fatal(err)
 		return TACCDir, true
 	}
@@ -174,7 +174,7 @@ func (config *TuxivConfig) CityFile(submitEnv *TACCGlobalEnv) bool {
 	localConfDir := submitEnv.LocalConfDir
 	f, err := os.Create(filepath.Join(localConfDir, "citynet.sh"))
 	if err != nil {
-		log.Println("Create Datasets config file failed.")
+		log.Println("Failed to create Datasets config file")
 		return true
 	}
 	defer f.Close()
@@ -192,7 +192,7 @@ func (config *TuxivConfig) RunshFile(tcloudcli *TcloudCli, submitEnv *TACCGlobal
 	localWorkDir := submitEnv.LocalWorkDir
 	f, err := os.Create(filepath.Join(localWorkDir, "run.sh"))
 	if err != nil {
-		log.Println("Create run.sh file failed.")
+		log.Println("Failed to create run.sh file")
 		return true
 	}
 	defer f.Close()
@@ -212,7 +212,7 @@ func (config *TuxivConfig) RunshFile(tcloudcli *TcloudCli, submitEnv *TACCGlobal
 	}
 	w.Flush()
 	if err = os.Chmod("run.sh", 0755); err != nil {
-		log.Println("Run.sh chmod failed.")
+		log.Println("Failed to chmod run.sh")
 		return true
 	}
 	return false
@@ -222,12 +222,12 @@ func (config *TuxivConfig) AddDepTuxivFile(tcloudcli *TcloudCli, args []string) 
 	tuxivFile = "tuxiv.conf"
 	yamlFile, err := ioutil.ReadFile(tuxivFile)
 	if err != nil {
-		log.Println("Read file failed.")
+		log.Println("Failed to read file")
 		return true
 	}
 	err = yaml.Unmarshal(yamlFile, config)
 	if err != nil {
-		log.Println("Parse original yaml file failed.")
+		log.Println("Failed to parse original yaml file")
 		return true
 	}
 	for i := 0; i < len(config.Environment.Dependencies); i++ {
@@ -241,12 +241,12 @@ func (config *TuxivConfig) AddDepTuxivFile(tcloudcli *TcloudCli, args []string) 
 	config.Environment.Dependencies = append(config.Environment.Dependencies, args[0])
 	yamlFile, err = yaml.Marshal(config)
 	if err != nil {
-		log.Println("Format file failed.")
+		log.Println("Failed to format file")
 		return true
 	}
 	err = ioutil.WriteFile(tuxivFile, yamlFile, 0755)
 	if err != nil {
-		log.Println("Write file failed.")
+		log.Println("Failed to write file")
 		return true
 	}
 
