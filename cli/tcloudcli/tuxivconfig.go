@@ -142,8 +142,17 @@ func (config *TuxivConfig) SlurmFile(submitEnv *TACCGlobalEnv) (map[string]strin
 	// Slurm file
 	fmt.Fprintln(w, "#!/bin/bash")
 	// SBATCH
+	var CHECK_OUTPUT = false
 	for _, s := range config.Job.General {
+		if strings.Contains(s, "output=") == true {
+			CHECK_OUTPUT = true
+		}
 		str := fmt.Sprintf("#SBATCH --%s", s)
+		str = ReplaceGlobalEnv(str, submitEnv)
+		fmt.Fprintln(w, str)
+	}
+	if CHECK_OUTPUT == false {
+		str := fmt.Sprintf("#SBATCH --output=%s", "${TACC_SLURM_USERLOG}/slurm-%j.out")
 		str = ReplaceGlobalEnv(str, submitEnv)
 		fmt.Fprintln(w, str)
 	}

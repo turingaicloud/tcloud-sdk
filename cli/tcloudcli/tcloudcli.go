@@ -315,6 +315,13 @@ func (tcloudcli *TcloudCli) BuildEnv(submitEnv *TACCGlobalEnv, args ...string) m
 		log.Println("Failed to add softlink")
 		os.Exit(-1)
 	}
+
+	// Remove auto-generated files
+	if err = tcloudcli.RemoveAutoFiles(submitEnv); err == true {
+		log.Println("Failed to remove all auto-generated files")
+		os.Exit(-1)
+	}
+
 	// Generate env name and check if hit the cache, if so, return, otherwise, create new env.
 	if tcloudcli.CondaCacheCheck(envName) {
 		return TACCDir
@@ -365,6 +372,18 @@ func (tcloudcli *TcloudCli) AddSoftLink(datasets []string) bool {
 		}
 
 		fmt.Println("Successfully create softlink at", remoteDir)
+	}
+	return false
+}
+
+func (tcloudcli *TcloudCli) RemoveAutoFiles(submitEnv *TACCGlobalEnv) bool {
+	if err := os.RemoveAll(submitEnv.LocalConfDir); err != nil {
+		log.Println("Failed to remove auto-generated files")
+		return true
+	}
+	if err := os.Remove(filepath.Join(submitEnv.LocalWorkDir, "run.sh")); err != nil {
+		log.Println("Failed to remove auto-generated run.sh")
+		return true
 	}
 	return false
 }
