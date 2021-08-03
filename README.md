@@ -79,6 +79,8 @@ You can use `tcloud init` to pull the latest cluster configuration from TACC. Th
           - output=${TACC_SLURM_USERLOG}/output.log
   ~~~
 
+  **Note:** You can modify the output log path in Job section. For debugging purpose, we recommend you set the `output` value under `${TACC_USERDIR}` directory and check it using `tcloud ls` and `tcloud download`.
+
 + Datasets
 
   In this section, you can specify your required CityNet dataset name, and tcloud will help place the dataset access in `TACC_USERDIR`. You can view the table of CityNet datasets at [CityNet Dataset Info](https://docs.google.com/spreadsheets/d/18qi2YpYvuXkWns7KY9pHYQclhS1Yyt5ysqgZ4plYcTg/edit#gid=0).
@@ -90,9 +92,9 @@ You can use `tcloud init` to pull the latest cluster configuration from TACC. Th
 
 #### TACC VARIABLES
 
-+ `TACC_WORKDIR`: TACC job workspace directory, each job has a different workspace directory.
++ `TACC_WORKDIR`: TACC job workspace directory. Each job has a different workspace directory.
 + `TACC_USERDIR`: TACC User directory.
-+ `TACC_SLURM_USERLOG`: Slurm log directory, the default value is `${TACC_USERDIR}/slurm_log`.
++ `TACC_SLURM_USERLOG`: Slurm log directory. The default value is `${TACC_USERDIR}/slurm_log`.
 
 ## Example
 
