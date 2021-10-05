@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/spf13/cobra"
 	"log"
+
+	"github.com/spf13/cobra"
 
 	"os"
 	"os/exec"
@@ -42,6 +43,7 @@ func newTcloudCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 	tcloudCmd.AddCommand(cmd.NewInstallCommand(cli))
 	// tcloudCmd.AddCommand(cmd.NewDatasetCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewLSCommand(cli))
+	tcloudCmd.AddCommand(cmd.NewCatCommand(cli))
 
 	var Verbose bool
 	tcloudCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")

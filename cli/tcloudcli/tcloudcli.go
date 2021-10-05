@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"golang.org/x/crypto/ssh"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -14,6 +13,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"golang.org/x/crypto/ssh"
 )
 
 var DEFAULT_CLUSTERCONFIG_PATH = "/mnt/data/.clusterconfig"
@@ -677,6 +678,19 @@ func (tcloudcli *TcloudCli) XCancel(job string, args ...string) bool {
 func (tcloudcli *TcloudCli) XDataset(args ...string) bool {
 	if err := tcloudcli.AddSoftLink(args); err == true {
 		log.Println("Failed to create dataset ", args[0])
+		return true
+	}
+	return false
+}
+
+func (tcloudcli *TcloudCli) XCat(args ...string) bool {
+	var cmd string
+	remoteUserDir := filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
+	remote := filepath.Join(remoteUserDir, args[0])
+
+	cmd = fmt.Sprintf("cat %s", remote)
+	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
+		log.Println("Failed to cat file ", args[0])
 		return true
 	}
 	return false
