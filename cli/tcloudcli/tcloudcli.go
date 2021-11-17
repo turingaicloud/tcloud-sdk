@@ -340,7 +340,7 @@ func (tcloudcli *TcloudCli) UploadRepo(repoName string, localWorkDir string) boo
 		log.Println("Failed to upload repo to ", dst)
 		return true
 	}
-	fmt.Println("Successfully upload repo to ", dst)
+	// fmt.Println("Successfully upload repo to ", dst)
 	return false
 }
 
@@ -372,7 +372,7 @@ func (tcloudcli *TcloudCli) AddSoftLink(datasets []string) bool {
 			return true
 		}
 
-		fmt.Println("Successfully create softlink at", remoteDir)
+		// fmt.Println("Successfully create softlink at", remoteDir)
 	}
 	return false
 }
@@ -411,7 +411,7 @@ func (tcloudcli *TcloudCli) CondaRemove(envName string) bool {
 		log.Println("Failed to run cmd in CondaRemove")
 		return true
 	}
-	fmt.Println("Previous environment \"", envName, "\" removed.")
+	// fmt.Println("Previous environment \"", envName, "\" removed.")
 	return false
 }
 
