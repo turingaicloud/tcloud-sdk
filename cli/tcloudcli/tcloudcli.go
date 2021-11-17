@@ -18,7 +18,7 @@ import (
 )
 
 var DEFAULT_CLUSTERCONFIG_PATH = "/mnt/data/.clusterconfig"
-var CityNetAPI = "http://ising.cse.ust.hk:9002/datasets"
+var CityNetAPI = "http://gw.turing.ust.hk:9002/datasets"
 
 type TcloudCli struct {
 	userConfig    *UserConfig
