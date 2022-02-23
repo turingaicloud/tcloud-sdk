@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="0.3.2"
+VERSION="0.4.0"
 
 MAC_MAKEFILE="Makefile.mac"
 LINUX_MAKEFILE="Makefile.linux"

@@ -10,8 +10,10 @@ type TACCGlobalEnv struct {
 	SlurmUserlog string
 }
 
+var DEFAULT_SLURMDIR = "slurm_log"
+
 func NewGlobalEnv() *TACCGlobalEnv {
 	var env TACCGlobalEnv
-	env.SlurmUserlog = "slurm_log"
+	env.SlurmUserlog = DEFAULT_SLURMDIR
 	return &env
 }

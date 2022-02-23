@@ -304,9 +304,16 @@ func (tcloudcli *TcloudCli) BuildEnv(submitEnv *TACCGlobalEnv, args ...string) m
 		log.Println("Failed to parse tuxiv.conf")
 		os.Exit(-1)
 	}
-	hashString := config.EnvNameGenerator()
-	// envName := config.Environment.Name + "-" + hashString
-	envName := hashString
+	var envName string
+	// TODO(wxc): verify if no cached_env_name is ""
+	if config.Environment.CachedEnvName == "" {
+		hashString := config.EnvNameGenerator()
+		// fmt.Fprintln(w, fmt.Sprintf("name: %s", config.Environment.Name + "-" + hashString))
+		envName = hashString
+	} else {
+		envName = config.Environment.Name
+	}
+
 	if err = tcloudcli.UploadRepo(repoName, localWorkDir); err == true {
 		log.Println("Failed to upload env repository")
 		os.Exit(-1)

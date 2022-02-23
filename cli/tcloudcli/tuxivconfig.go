@@ -5,7 +5,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	yaml "gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"os"
@@ -13,14 +12,17 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	yaml "gopkg.in/yaml.v2"
 )
 
 type TuxivConfig struct {
 	Entrypoint  []string
 	Environment struct {
-		Name         string
-		Channels     []string
-		Dependencies []string
+		Name          string
+		CachedEnvName string
+		Channels      []string
+		Dependencies  []string
 	}
 	Job struct {
 		Name    string
@@ -105,10 +107,18 @@ func (config *TuxivConfig) CondaFile(submitEnv *TACCGlobalEnv) bool {
 	defer f.Close()
 
 	w := bufio.NewWriter(f)
+
 	// Conda file
-	hashString := config.EnvNameGenerator()
-	// fmt.Fprintln(w, fmt.Sprintf("name: %s", config.Environment.Name + "-" + hashString))
-	fmt.Fprintln(w, fmt.Sprintf("name: %s", hashString))
+	var EnvName string
+	// TODO(wxc): verify if no cached_env_name is ""
+	if config.Environment.CachedEnvName == "" {
+		hashString := config.EnvNameGenerator()
+		// fmt.Fprintln(w, fmt.Sprintf("name: %s", config.Environment.Name + "-" + hashString))
+		EnvName = hashString
+	} else {
+		EnvName = config.Environment.Name
+	}
+	fmt.Fprintln(w, fmt.Sprintf("name: %s", EnvName))
 	// Channels
 	fmt.Fprintln(w, fmt.Sprintf("channels:"))
 	for _, s := range config.Environment.Channels {
@@ -210,9 +220,17 @@ func (config *TuxivConfig) RunshFile(tcloudcli *TcloudCli, submitEnv *TACCGlobal
 	homeDir := filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName)
 	str := fmt.Sprintf("#!/bin/bash\nsource %s/%s", homeDir, CONDA_SHELL_PATH)
 	fmt.Fprintln(w, str)
-	hashString := config.EnvNameGenerator()
-	// str = fmt.Sprintf("conda activate %s\n", config.Environment.Name + "-" + hashString)
-	str = fmt.Sprintf("conda activate %s\n", hashString)
+
+	var EnvName string
+	// TODO(wxc): verify if no cached_env_name is ""
+	if config.Environment.CachedEnvName == "" {
+		hashString := config.EnvNameGenerator()
+		// fmt.Fprintln(w, fmt.Sprintf("name: %s", config.Environment.Name + "-" + hashString))
+		EnvName = hashString
+	} else {
+		EnvName = config.Environment.Name
+	}
+	str = fmt.Sprintf("conda activate %s\n", EnvName)
 	fmt.Fprintln(w, str)
 
 	for _, s := range config.Entrypoint {
