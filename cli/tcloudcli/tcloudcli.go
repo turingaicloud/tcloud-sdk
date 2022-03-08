@@ -672,6 +672,35 @@ func (tcloudcli *TcloudCli) XLS(IsLong bool, IsReverse bool, IsAll bool, args ..
 	return false
 }
 
+func (tcloudcli *TcloudCli) XENVLS(IsLong bool, IsReverse bool, IsAll bool, args ...string) bool {
+	var src, flags string
+	if len(args) > 0 {
+		src = args[0]
+	} else {
+		src = "."
+	}
+	flags = ""
+	if IsLong {
+		flags += " -l"
+	}
+	if IsReverse {
+		flags += " -r"
+	}
+	if IsAll {
+		flags += " -a"
+	}
+
+	remoteUserDir := filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, ".Miniconda3/envs")
+	remote := filepath.Join(remoteUserDir, src)
+
+	cmd := fmt.Sprintf("ls %s %s", flags, remote)
+	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
+		log.Printf("Failed to ls %s %s\n", flags, remote)
+		return true
+	}
+	return false
+}
+
 func (tcloudcli *TcloudCli) XCancel(job string, args ...string) bool {
 	var cmd string
 	cmd = fmt.Sprintf("%s scancel %s", tcloudcli.prefix, job)

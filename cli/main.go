@@ -25,6 +25,7 @@ func main() {
 		log.Println(err.Error())
 		os.Exit(1)
 	}
+
 }
 
 func newTcloudCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
@@ -44,6 +45,7 @@ func newTcloudCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 	// tcloudCmd.AddCommand(cmd.NewDatasetCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewLSCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewCatCommand(cli))
+	tcloudCmd.AddCommand(cmd.NewENVLSCommand(cli))
 
 	var Verbose bool
 	tcloudCmd.PersistentFlags().BoolVarP(&Verbose, "verbose", "v", false, "verbose output")
