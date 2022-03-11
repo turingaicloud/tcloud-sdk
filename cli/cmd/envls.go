@@ -11,7 +11,8 @@ func NewENVLSCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 		Use:   "env",
 		Short: "Check environment",
 	}
-
+	cmd.PersistentFlags().BoolP("help", "h", false, "Print usage")
+	cmd.PersistentFlags().Lookup("help").Hidden = true
 	cmd.AddCommand(sub(cli))
 	return cmd
 }
@@ -26,7 +27,6 @@ func sub(cli *tcloudcli.TcloudCli) *cobra.Command {
 			cli.XENVLS(IsEnv, args...)
 		},
 	}
-
 	var IsEnv bool
 	cmd.Flags().BoolVarP(&IsEnv, "env", "n", false, "List environment packages.")
 	return cmd
