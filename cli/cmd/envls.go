@@ -9,7 +9,7 @@ import (
 func NewENVLSCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "env",
-		Short: "List environment",
+		Short: "Check environment",
 	}
 
 	cmd.AddCommand(sub(cli))
@@ -19,19 +19,15 @@ func NewENVLSCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 func sub(cli *tcloudcli.TcloudCli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "ls",
-		Short: "List directory contents",
+		Short: "List environment name",
 		Args:  cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			IsLong, _ := cmd.Flags().GetBool("long")
-			IsReverse, _ := cmd.Flags().GetBool("reverse")
-			IsAll, _ := cmd.Flags().GetBool("all")
-			cli.XENVLS(IsLong, IsReverse, IsAll, args...)
+			IsEnv, _ := cmd.Flags().GetBool("env")
+			cli.XENVLS(IsEnv, args...)
 		},
 	}
 
-	var IsLong, IsReverse, IsAll bool
-	cmd.Flags().BoolVarP(&IsLong, "long", "l", false, "List in long format.")
-	cmd.Flags().BoolVarP(&IsReverse, "reverse", "r", false, "Reverse the order of the sort.")
-	cmd.Flags().BoolVarP(&IsAll, "all", "a", false, "Include directory entries whose names begin with a dot (.).")
+	var IsEnv bool
+	cmd.Flags().BoolVarP(&IsEnv, "env", "n", false, "List environment packages.")
 	return cmd
 }
