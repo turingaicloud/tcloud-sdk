@@ -305,8 +305,7 @@ func (tcloudcli *TcloudCli) BuildEnv(submitEnv *TACCGlobalEnv, args ...string) m
 		os.Exit(-1)
 	}
 	var envName string
-	// TODO(wxc): verify if no cached_env_name is ""
-	if config.Environment.CachedEnvName == "" {
+	if config.Environment.Name == "" {
 		hashString := config.EnvNameGenerator()
 		// fmt.Fprintln(w, fmt.Sprintf("name: %s", config.Environment.Name + "-" + hashString))
 		envName = hashString
@@ -332,6 +331,16 @@ func (tcloudcli *TcloudCli) BuildEnv(submitEnv *TACCGlobalEnv, args ...string) m
 
 	// Generate env name and check if hit the cache, if so, return, otherwise, create new env.
 	if tcloudcli.CondaCacheCheck(envName) {
+		homeDir := filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName)
+		condaBin := filepath.Join(homeDir, tcloudcli.clusterConfig.Conda)
+		condaYaml := filepath.Join(homeDir, tcloudcli.clusterConfig.Dirs["workdir"], repoName, "configurations", "conda.yaml")
+		cmd := fmt.Sprintf("%s %s env update -f %s -n %s\n", tcloudcli.prefix, condaBin, condaYaml, envName)
+		if err := tcloudcli.RemoteExecCmd(cmd); err == true {
+			log.Printf("Failed to update %s\n", envName)
+			os.Exit(-1)
+			return TACCDir
+		}
+		fmt.Printf("Env %s exists, dependencies updated.\n", envName)
 		return TACCDir
 	}
 	if err = tcloudcli.CondaCreate(repoName, envName, randString); err == true {
@@ -406,7 +415,7 @@ func (tcloudcli *TcloudCli) CondaCreate(repoName string, envName string, randStr
 		return true
 	}
 
-	fmt.Println("Successfully create environment .")
+	fmt.Printf("Successfully create environment %s\n.", envName)
 	return false
 }
 

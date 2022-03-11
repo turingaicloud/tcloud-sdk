@@ -19,10 +19,9 @@ import (
 type TuxivConfig struct {
 	Entrypoint  []string
 	Environment struct {
-		Name          string
-		CachedEnvName string
-		Channels      []string
-		Dependencies  []string
+		Name         string
+		Channels     []string
+		Dependencies []string
 	}
 	Job struct {
 		Name    string
@@ -110,8 +109,7 @@ func (config *TuxivConfig) CondaFile(submitEnv *TACCGlobalEnv) bool {
 
 	// Conda file
 	var EnvName string
-	// TODO(wxc): verify if no cached_env_name is ""
-	if config.Environment.CachedEnvName == "" {
+	if config.Environment.Name == "" {
 		hashString := config.EnvNameGenerator()
 		// fmt.Fprintln(w, fmt.Sprintf("name: %s", config.Environment.Name + "-" + hashString))
 		EnvName = hashString
@@ -222,8 +220,7 @@ func (config *TuxivConfig) RunshFile(tcloudcli *TcloudCli, submitEnv *TACCGlobal
 	fmt.Fprintln(w, str)
 
 	var EnvName string
-	// TODO(wxc): verify if no cached_env_name is ""
-	if config.Environment.CachedEnvName == "" {
+	if config.Environment.Name == "" {
 		hashString := config.EnvNameGenerator()
 		// fmt.Fprintln(w, fmt.Sprintf("name: %s", config.Environment.Name + "-" + hashString))
 		EnvName = hashString
