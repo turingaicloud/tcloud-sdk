@@ -35,6 +35,9 @@ type TuxivConfig struct {
 }
 
 var CONDA_SHELL_PATH = ".Miniconda3/etc/profile.d/conda.sh"
+var tuxivFile = "tuxiv.conf"
+var confDir = "configurations"
+var RunshFile = "run.sh"
 
 func (config *TuxivConfig) TACCJobEnv(remoteWorkDir string, remoteUserDir string) ([]string, map[string]string) {
 	var strlist []string
@@ -48,8 +51,6 @@ func (config *TuxivConfig) TACCJobEnv(remoteWorkDir string, remoteUserDir string
 }
 
 func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, submitEnv *TACCGlobalEnv, args []string) (string, string, map[string]string, []string, bool) {
-	var tuxivFile = "tuxiv.conf"
-	// fmt.Println("Start parsing tuxiv.conf...")
 	TACCDir := make(map[string]string)
 	if len(args) < 1 {
 		submitEnv.LocalWorkDir, _ = filepath.Abs(path.Dir("."))
@@ -57,24 +58,25 @@ func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, submitEnv *TACCG
 			os.Exit(-1)
 		}
 		fmt.Println("Start parsing tuxiv.conf...")
-		submitEnv.LocalConfDir = filepath.Join(submitEnv.LocalWorkDir, "configurations")
+		submitEnv.LocalConfDir = filepath.Join(submitEnv.LocalWorkDir, confDir)
 		dirlist := strings.Split(submitEnv.LocalWorkDir, "/")
 		submitEnv.RepoName = dirlist[len(dirlist)-1]
 		submitEnv.RemoteWorkDir = filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"], submitEnv.RepoName)
 		submitEnv.RemoteUserDir = filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
 	} else {
-		submitEnv.LocalWorkDir, _ = filepath.Abs(path.Dir(args[0]))
+		submitEnv.LocalWorkDir, _ = filepath.Abs(args[0])
 		if err := config.DirSizeCheck(submitEnv.LocalWorkDir); err == true {
 			os.Exit(-1)
 		}
 		fmt.Println("Start parsing tuxiv.conf...")
-		submitEnv.LocalConfDir = filepath.Join(submitEnv.LocalWorkDir, "configurations")
+		submitEnv.LocalConfDir = filepath.Join(submitEnv.LocalWorkDir, confDir)
 		dirlist := strings.Split(submitEnv.LocalWorkDir, "/")
 		submitEnv.RepoName = dirlist[len(dirlist)-1]
 		submitEnv.RemoteWorkDir = filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"], submitEnv.RepoName)
 		submitEnv.RemoteUserDir = filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
 	}
-	yamlFile, err := ioutil.ReadFile(tuxivFile)
+	LocalTuxivFile := filepath.Join(submitEnv.LocalWorkDir, tuxivFile)
+	yamlFile, err := ioutil.ReadFile(LocalTuxivFile)
 	if err != nil {
 		return submitEnv.LocalWorkDir, submitEnv.RepoName, TACCDir, nil, true
 	}
@@ -189,7 +191,7 @@ func (config *TuxivConfig) SlurmFile(submitEnv *TACCGlobalEnv) (map[string]strin
 		str := fmt.Sprintf("export %s", s)
 		fmt.Fprintln(w, str)
 	}
-	str := fmt.Sprintf("srun %s", filepath.Join(remoteWorkDir, "run.sh"))
+	str := fmt.Sprintf("srun %s", filepath.Join(remoteWorkDir, RunshFile))
 	fmt.Fprintln(w, str)
 	w.Flush()
 	return TACCDir, false
@@ -215,7 +217,8 @@ func (config *TuxivConfig) CityFile(submitEnv *TACCGlobalEnv) bool {
 
 func (config *TuxivConfig) RunshFile(tcloudcli *TcloudCli, submitEnv *TACCGlobalEnv) bool {
 	localWorkDir := submitEnv.LocalWorkDir
-	f, err := os.Create(filepath.Join(localWorkDir, "run.sh"))
+	localRunshFile := filepath.Join(localWorkDir, RunshFile)
+	f, err := os.Create(localRunshFile)
 	if err != nil {
 		log.Println("Failed to create run.sh file")
 		return true
@@ -243,7 +246,7 @@ func (config *TuxivConfig) RunshFile(tcloudcli *TcloudCli, submitEnv *TACCGlobal
 		fmt.Fprintln(w, str)
 	}
 	w.Flush()
-	if err = os.Chmod("run.sh", 0755); err != nil {
+	if err = os.Chmod(localRunshFile, 0755); err != nil {
 		log.Println("Failed to chmod run.sh")
 		return true
 	}
