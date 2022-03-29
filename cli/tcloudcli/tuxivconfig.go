@@ -49,10 +49,14 @@ func (config *TuxivConfig) TACCJobEnv(remoteWorkDir string, remoteUserDir string
 
 func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, submitEnv *TACCGlobalEnv, args []string) (string, string, map[string]string, []string, bool) {
 	var tuxivFile = "tuxiv.conf"
-	fmt.Println("Start parsing tuxiv.conf...")
+	// fmt.Println("Start parsing tuxiv.conf...")
 	TACCDir := make(map[string]string)
 	if len(args) < 1 {
 		submitEnv.LocalWorkDir, _ = filepath.Abs(path.Dir("."))
+		if err := config.DirSizeCheck(submitEnv.LocalWorkDir); err == true {
+			os.Exit(-1)
+		}
+		fmt.Println("Start parsing tuxiv.conf...")
 		submitEnv.LocalConfDir = filepath.Join(submitEnv.LocalWorkDir, "configurations")
 		dirlist := strings.Split(submitEnv.LocalWorkDir, "/")
 		submitEnv.RepoName = dirlist[len(dirlist)-1]
@@ -60,6 +64,10 @@ func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, submitEnv *TACCG
 		submitEnv.RemoteUserDir = filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
 	} else {
 		submitEnv.LocalWorkDir, _ = filepath.Abs(path.Dir(args[0]))
+		if err := config.DirSizeCheck(submitEnv.LocalWorkDir); err == true {
+			os.Exit(-1)
+		}
+		fmt.Println("Start parsing tuxiv.conf...")
 		submitEnv.LocalConfDir = filepath.Join(submitEnv.LocalWorkDir, "configurations")
 		dirlist := strings.Split(submitEnv.LocalWorkDir, "/")
 		submitEnv.RepoName = dirlist[len(dirlist)-1]
@@ -300,4 +308,24 @@ func (config *TuxivConfig) EnvNameGenerator() string {
 	hashValue := md5.Sum(data)
 	hashString := hex.EncodeToString(hashValue[:])
 	return hashString
+}
+
+func (config *TuxivConfig) DirSizeCheck(path string) bool {
+	var size int64
+	err := filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+		if !info.IsDir() {
+			size += info.Size()
+		}
+		return err
+	})
+	size = size / 1024 / 1024
+	if err != nil {
+		log.Printf("Failed to calculate folder size .\n")
+		return true
+	}
+	if size > 1024 {
+		log.Printf("Fail to upload file. Upload size:%dMB. Limitation: 1024MB.\n", size)
+		return true
+	}
+	return false
 }
