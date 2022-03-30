@@ -1,7 +1,7 @@
 # TCLOUD-SDK
 ## Command-line Interface used for TACC job submission.
 ```
-TCLOUD Command-line Interface v0.4.0
+TCLOUD Command-line Interface v0.4.1
 
 Usage:
 tcloud [command] [flags] [args]

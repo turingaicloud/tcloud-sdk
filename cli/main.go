@@ -12,7 +12,7 @@ import (
 	"tcloud-sdk/cli/tcloudcli"
 )
 
-var VERSION = "0.4.0"
+var VERSION = "0.4.1"
 
 func main() {
 	home := homeDIR()
