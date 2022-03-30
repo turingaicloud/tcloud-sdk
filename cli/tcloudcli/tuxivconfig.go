@@ -54,7 +54,7 @@ func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, submitEnv *TACCG
 	TACCDir := make(map[string]string)
 	if len(args) < 1 {
 		submitEnv.LocalWorkDir, _ = filepath.Abs(path.Dir("."))
-		if err := config.DirSizeCheck(submitEnv.LocalWorkDir); err == true {
+		if err := config.DirSizeCheck(submitEnv.LocalWorkDir, tcloudcli); err == true {
 			os.Exit(-1)
 		}
 		fmt.Println("Start parsing tuxiv.conf...")
@@ -65,7 +65,7 @@ func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, submitEnv *TACCG
 		submitEnv.RemoteUserDir = filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
 	} else {
 		submitEnv.LocalWorkDir, _ = filepath.Abs(args[0])
-		if err := config.DirSizeCheck(submitEnv.LocalWorkDir); err == true {
+		if err := config.DirSizeCheck(submitEnv.LocalWorkDir, tcloudcli); err == true {
 			os.Exit(-1)
 		}
 		fmt.Println("Start parsing tuxiv.conf...")
@@ -313,7 +313,7 @@ func (config *TuxivConfig) EnvNameGenerator() string {
 	return hashString
 }
 
-func (config *TuxivConfig) DirSizeCheck(path string) bool {
+func (config *TuxivConfig) DirSizeCheck(path string, tcloudcli *TcloudCli) bool {
 	var size int64
 	err := filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
 		if !info.IsDir() {
@@ -326,8 +326,8 @@ func (config *TuxivConfig) DirSizeCheck(path string) bool {
 		log.Printf("Failed to calculate folder size .\n")
 		return true
 	}
-	if size > 1024 {
-		log.Printf("Fail to upload file. Upload size:%dMB. Limitation: 1024MB.\n", size)
+	if size > tcloudcli.clusterConfig.StorageQuota {
+		log.Printf("Fail to upload file. Upload size:%dMB. Limitation: %dMB.\n", size, tcloudcli.clusterConfig.StorageQuota)
 		return true
 	}
 	return false

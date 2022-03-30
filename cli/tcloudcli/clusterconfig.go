@@ -10,9 +10,11 @@ type ClusterConfig struct {
 	Dirs          map[string]string `json: "dirs"`
 	TcloudVersion string            `json: "tcloudversion"`
 	HomeDir       string            `json: "homedir"`
-	DatasetDir    string            `json: "datasetdir`
-	Conda         string            `json: "conda`
-	path          string            `json: "path"`
+	DatasetDir    string            `json: "datasetdir"`
+	Conda         string            `json: "conda"`
+	StorageQuota  int64             `json: "storage_quota"`
+	// Note: StorageQuota number in clusterconfig is in MB
+	path string `json: "path"`
 }
 
 func NewClusterConfig(path string) *ClusterConfig {
