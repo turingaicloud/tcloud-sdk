@@ -776,3 +776,13 @@ func (tcloudcli *TcloudCli) CondaCacheCheck(envName string) bool {
 	}
 	return false
 }
+
+func (tcloudcli *TcloudCli) XTest(args ...string) bool {
+	var config TuxivConfig
+	var src string
+	src = args[0]
+
+	err := config.DirSizeCheck(src, tcloudcli)
+	log.Println("Error:", err)
+	return false
+}
