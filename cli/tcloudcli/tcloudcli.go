@@ -784,5 +784,6 @@ func (tcloudcli *TcloudCli) XTest(args ...string) bool {
 
 	err := config.DirSizeCheck(src, tcloudcli)
 	log.Println("Error:", err)
+	log.Println(tcloudcli.clusterConfig.StorageQuota)
 	return false
 }

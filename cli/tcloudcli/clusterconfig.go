@@ -12,7 +12,7 @@ type ClusterConfig struct {
 	HomeDir       string            `json: "homedir"`
 	DatasetDir    string            `json: "datasetdir"`
 	Conda         string            `json: "conda"`
-	StorageQuota  int64             `json: "storage_quota"`
+	StorageQuota  int64             `json: "storagequota"`
 	// Note: StorageQuota number in clusterconfig is in MB
 	path string `json: "path"`
 }
