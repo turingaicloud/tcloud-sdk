@@ -17,15 +17,15 @@ import (
 )
 
 type TuxivConfig struct {
-	Entrypoint  []string
+	Entrypoint  []string `yaml:"entrypoint"`
 	Environment struct {
-		Name         string
-		Channels     []string
-		Dependencies []string
+		Name         string `yaml:"name"`
+		Channels     []string `yaml:"channels"`
+		Dependencies []string `yaml:"dependencies"`
 	}
 	Job struct {
 		Name    string
-		General []string
+		General []string `yaml:"general"`
 		Module  []string
 		Env     []string
 		Log     string
@@ -49,15 +49,86 @@ func (config *TuxivConfig) TACCJobEnv(remoteWorkDir string, remoteUserDir string
 	TACCDir["TACC_USERDIR"] = remoteUserDir
 	return strlist, TACCDir
 }
+// Retrieve the slurm job arguments from tuxiv.conf, so that we can specific those param to k8s job
+func (config *TuxivConfig) ParseTuxivConfigforK8s(tcloudcli *TcloudCli, submitEnv *TACCGlobalEnv)(string,string,string,string,string,string, error){
+	_, renderSts := config.renderConfigByTuxivConf(tcloudcli, submitEnv)
+	if renderSts {
+		return "","","","","","", fmt.Errorf("Failed to render other configuration files.....")
+	}
+
+	// Inner Function
+	parseValueFromJobSetup := func(jobYaml []string, key string)(string, error){
+		for _, value := range jobYaml {
+			if strings.Contains(value, key){
+					index := strings.Index(value, key)
+					if index != -1 {
+						return  value[index+len(key):],nil
+					}
+			}
+		}
+		return "", fmt.Errorf("Key not Found..")
+	}
+
+	cpu,  _ := parseValueFromJobSetup(config.Job.General, "cpus-per-task=")
+	mem, _ := parseValueFromJobSetup(config.Job.General, "mem=") // memory per node
+	nodes,_ := parseValueFromJobSetup(config.Job.General, "nodes=")
+	out,  _ := parseValueFromJobSetup(config.Job.General,"output=")
+	gpu,  _ := parseValueFromJobSetup(config.Job.General,"gres=gpu:")
+	if len(config.Entrypoint) == 0{
+		return "","","","","","", fmt.Errorf("Missing Entrypoint in TuxivConfig")
+	}
+	enp     := config.Entrypoint[0]
+	return cpu, mem, nodes, out, gpu, enp, nil
+}
+
+
+// sub-function
+func (config *TuxivConfig) renderConfigByTuxivConf(tcloudcli *TcloudCli, submitEnv *TACCGlobalEnv) (map[string]string, bool) {
+	TACCDir := make(map[string]string)
+	LocalTuxivFile := filepath.Join(submitEnv.LocalWorkDir, tuxivFile)
+	yamlFile, err := ioutil.ReadFile(LocalTuxivFile)
+	if err != nil {
+		return  TACCDir, true
+	}
+
+	err = yaml.Unmarshal(yamlFile, config)
+	if err != nil {
+			log.Println("Failed to decode yamlFile", LocalTuxivFile)
+			return TACCDir, true
+	}
+	if _, err = os.Stat(submitEnv.LocalConfDir); os.IsNotExist(err) {
+		os.Mkdir(submitEnv.LocalConfDir, 0755)
+	}
+	//log.Println("rendering condaFile")
+	if err := config.CondaFile(submitEnv); err == true {
+		log.Println("Failed to generate Environment config file")
+		return TACCDir, true
+	}
+	var err1 bool
+	//log.Println("rendering run.slurm")
+	if TACCDir, err1 = config.SlurmFile(submitEnv); err1 == true {
+		log.Println("Failed to generate Slurm config file")
+		return TACCDir, true
+	}
+	//log.Println("rendering cityFile")
+	if err := config.CityFile(submitEnv); err == true {
+		log.Println("Failed to generate Datasets config file")
+		return TACCDir, true
+	}
+	//log.Println("rendering run.sh")
+	if err := config.RunshFile(tcloudcli, submitEnv); err == true {
+		return TACCDir, true
+	}
+	return TACCDir, false
+}
 
 func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, submitEnv *TACCGlobalEnv, args []string) (string, string, map[string]string, []string, bool) {
-	TACCDir := make(map[string]string)
 	if len(args) < 1 {
 		submitEnv.LocalWorkDir, _ = filepath.Abs(path.Dir("."))
 		if err := config.DirSizeCheck(submitEnv.LocalWorkDir, tcloudcli); err == true {
 			os.Exit(-1)
 		}
-		fmt.Println("Start parsing tuxiv.conf...")
+		log.Println("Start parsing tuxiv.conf...")
 		submitEnv.LocalConfDir = filepath.Join(submitEnv.LocalWorkDir, confDir)
 		dirlist := strings.Split(submitEnv.LocalWorkDir, "/")
 		submitEnv.RepoName = dirlist[len(dirlist)-1]
@@ -68,42 +139,15 @@ func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, submitEnv *TACCG
 		if err := config.DirSizeCheck(submitEnv.LocalWorkDir, tcloudcli); err == true {
 			os.Exit(-1)
 		}
-		fmt.Println("Start parsing tuxiv.conf...")
+		log.Println("Start parsing tuxiv.conf...")
 		submitEnv.LocalConfDir = filepath.Join(submitEnv.LocalWorkDir, confDir)
 		dirlist := strings.Split(submitEnv.LocalWorkDir, "/")
 		submitEnv.RepoName = dirlist[len(dirlist)-1]
 		submitEnv.RemoteWorkDir = filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"], submitEnv.RepoName)
 		submitEnv.RemoteUserDir = filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
 	}
-	LocalTuxivFile := filepath.Join(submitEnv.LocalWorkDir, tuxivFile)
-	yamlFile, err := ioutil.ReadFile(LocalTuxivFile)
-	if err != nil {
-		return submitEnv.LocalWorkDir, submitEnv.RepoName, TACCDir, nil, true
-	}
-
-	err = yaml.Unmarshal(yamlFile, config)
-	if _, err = os.Stat(submitEnv.LocalConfDir); os.IsNotExist(err) {
-		os.Mkdir(submitEnv.LocalConfDir, 0755)
-	}
-
-	if err := config.CondaFile(submitEnv); err == true {
-		log.Println("Failed to generate Environment config file")
-		return submitEnv.LocalWorkDir, submitEnv.RepoName, TACCDir, nil, true
-	}
-	var err1 bool
-	if TACCDir, err1 = config.SlurmFile(submitEnv); err1 == true {
-		log.Println("Failed to generate Slurm config file")
-		return submitEnv.LocalWorkDir, submitEnv.RepoName, TACCDir, config.Datasets, true
-	}
-	if err := config.CityFile(submitEnv); err == true {
-		log.Println("Failed to generate Datasets config file")
-		return submitEnv.LocalWorkDir, submitEnv.RepoName, TACCDir, config.Datasets, true
-	}
-	if err := config.RunshFile(tcloudcli, submitEnv); err == true {
-		log.Println("Failed to generate Run.sh exec file")
-		return submitEnv.LocalWorkDir, submitEnv.RepoName, TACCDir, config.Datasets, true
-	}
-	return submitEnv.LocalWorkDir, submitEnv.RepoName, TACCDir, config.Datasets, false
+	TACCDir, renderSts := config.renderConfigByTuxivConf(tcloudcli, submitEnv)
+	return submitEnv.LocalWorkDir, submitEnv.RepoName, TACCDir, config.Datasets, renderSts
 }
 
 func (config *TuxivConfig) CondaFile(submitEnv *TACCGlobalEnv) bool {

@@ -328,7 +328,6 @@ func (tcloudcli *TcloudCli) BuildEnv(submitEnv *TACCGlobalEnv, args ...string) m
 		log.Println("Failed to remove all auto-generated files")
 		os.Exit(-1)
 	}
-
 	// Generate env name and check if hit the cache, if so, return, otherwise, create new env.
 	if tcloudcli.CondaCacheCheck(envName) {
 		homeDir := filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName)
@@ -454,8 +453,7 @@ func RandString(n int) string {
 	}
 	return sb.String()
 }
-
-func (tcloudcli *TcloudCli) XSubmit(args ...string) bool {
+func (tcloudcli *TcloudCli) XSubmit(k8s bool, args ...string) bool {
 	var submitEnv = NewGlobalEnv()
 
 	cmd := fmt.Sprintf("mkdir -p  %s", filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"]))
@@ -475,8 +473,40 @@ func (tcloudcli *TcloudCli) XSubmit(args ...string) bool {
 	}
 
 	TACCDir := tcloudcli.BuildEnv(submitEnv, args...)
+	if k8s == false{
+		cmd = fmt.Sprintf("%s sbatch %s", tcloudcli.prefix, filepath.Join(submitEnv.RemoteWorkDir, "configurations", "run.slurm"))
+	} else{
+		// in container, mount the conda folders as it was "/mnt/home/peterpan/.Miniconda3/"
+		// since the run.sh will do "source /mnt/home/peterpan/.Miniconda3/etc/profile.d/conda.sh"
 
-	cmd = fmt.Sprintf("%s sbatch %s", tcloudcli.prefix, filepath.Join(submitEnv.RemoteWorkDir, "configurations", "run.slurm"))
+		// as well, all user code/data are also in the same folder. One stone for two birds..
+		var config TuxivConfig
+		namespace := tcloudcli.userConfig.UserName
+		//jobName := random()
+		cpuCount, memory, workers, outputDir, gpuCount, _, err := config.ParseTuxivConfigforK8s(tcloudcli, submitEnv)
+		if err != nil {
+			log.Println("Failed to parse TuxivConfig or render config files")
+			return true
+		}
+		image := "python:3.12" // hardcode for now
+		hostPathVolume := submitEnv.RemoteWorkDir // like "/mnt/home/peterpan"
+		workingDir := hostPathVolume
+		pathToMountInContainer := hostPathVolume
+		entryCmd := fmt.Sprintf("bash %s", filepath.Join(submitEnv.RemoteWorkDir, "run.sh"))
+		cmd = fmt.Sprintf("arena submit pytorch --namespace=%s  --workers=%s --working-dir=%s --image=%s --data-dir=%s:%s  --cpu=%s --memory=%s --gpus=%s --logdir=%s %s",
+						namespace,
+						workers,
+						workingDir,
+						image,
+						hostPathVolume,
+						pathToMountInContainer,
+						cpuCount,
+						memory,
+						gpuCount,
+						outputDir,
+						entryCmd)
+
+	}
 
 	// Create `RUNDIR` in remote and run cmd at `RUNDIR`
 	cmd = fmt.Sprintf("mkdir -p %s && cd %s && %s", TACCDir["TACC_WORKDIR"], TACCDir["TACC_WORKDIR"], cmd)
