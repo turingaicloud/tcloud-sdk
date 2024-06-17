@@ -453,6 +453,21 @@ func RandString(n int) string {
 	}
 	return sb.String()
 }
+
+// random name generator
+func (tcloudcli *TcloudCli) randomName(length int) string {
+	rand.Seed(time.Now().Unix())
+
+	ran_str := make([]byte, length)
+
+	// Generating Random String
+	for i := 0; i < length; i++ {
+		ran_str[i] = byte(97 + rand.Intn(25)) // 97 is ASCii "a"
+	}
+	return string(ran_str)
+}
+
+
 func (tcloudcli *TcloudCli) XSubmit(k8s bool, args ...string) bool {
 	var submitEnv = NewGlobalEnv()
 
@@ -488,26 +503,91 @@ func (tcloudcli *TcloudCli) XSubmit(k8s bool, args ...string) bool {
 			log.Println("Failed to parse TuxivConfig or render config files")
 			return true
 		}
-		image := "python:3.12" // hardcode for now
-		hostPathVolume := submitEnv.RemoteWorkDir // like "/mnt/home/peterpan"
+		//image := "python:3.12" // hardcode for now
+		image := "release-ci.daocloud.io/baize/baize-notebook:v0.6-dev-e388509b" // "m.daocloud.io/nvcr.io/nvidia/pytorch:24.02-py3"
+		hostPathVolume :=  filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName) // like "/mnt/home/peterpan"
 		workingDir := hostPathVolume
 		pathToMountInContainer := hostPathVolume
 		entryCmd := fmt.Sprintf("bash %s", filepath.Join(submitEnv.RemoteWorkDir, "run.sh"))
-		cmd = fmt.Sprintf("arena submit pytorch --namespace=%s  --workers=%s --working-dir=%s --image=%s --data-dir=%s:%s  --cpu=%s --memory=%s --gpus=%s --logdir=%s %s",
+		randName := "pytorch-" + tcloudcli.randomName(6)
+		gpuParam := "--gpus="   + gpuCount
+		cpuParam := "--cpu="    + cpuCount
+		memParam := "--memory=" + memory
+		if gpuCount == "" {
+			gpuParam = ""
+		}
+		if cpuCount == "" {
+			cpuParam = ""
+		}
+		if memory == "" {
+			memParam = ""
+		}
+		arenaCmd := fmt.Sprintf("arena submit pytorch --namespace=%s --name=%s  --workers=%s --working-dir=%s --image=%s --data-dir=%s:%s  %s %s %s --logdir=%s %s || exit -1",
 						namespace,
+						randName,
 						workers,
 						workingDir,
 						image,
 						hostPathVolume,
 						pathToMountInContainer,
-						cpuCount,
-						memory,
-						gpuCount,
+						cpuParam,
+						memParam,
+						gpuParam,
 						outputDir,
 						entryCmd)
 
-	}
+		// get the node allocated the k8s job, then using salloc command to reserve the node resource and release when arena job completd.
+		reserveSlurmCmd := fmt.Sprintf(`
+set -x;
+export NS=%s;
+export Job=%s;
+#kubectl  --namespace $NS  wait pytorchjob $Job --for condition=Running --timeout=-1s;
+while true; do
+	status=$(kubectl --namespace  $NS get pytorchjob $Job -o jsonpath='{.status.conditions[-1].type}')
+	if [ "$status" == "Running"  ]; then
+		break
+	elif [ "$status" == "Failed"  ]; then
+	    exit 0 
+	fi
+	sleep 5
+done
+if [ "$status" == "Failed" ];then
+      echo "Job $NS/$Job Failed, just exit.."
+      exit 0
+fi
 
+N=$(arena get $Job --namespace $NS  -o  json| jq '.instances[].node');
+temp_script=$(mktemp);
+cat << EOF > $temp_script
+#!/bin/bash
+#SBATCH --nodes=%s
+#SBATCH --ntasks-per-node=%s
+#SBATCH --cpus-per-task=%s
+echo "waiting Job $Job completed"
+while true; do
+	status=\$(kubectl --namespace  $NS get pytorchjob $Job -o jsonpath='{.status.conditions[-1].type}')
+	if [ "\$status" == "Succeeded"  ]; then
+		break
+	elif [ "\$status" == "Failed"  ]; then
+   	    break
+	fi
+	sleep 5
+done
+echo "job final status = " $$status
+EOF
+echo "reserve equvalant equivalent resources for slurm on node $N.."
+sbatch --nodelist=$N $temp_script;
+rm -f $temp_script;`,
+									namespace,
+									randName,
+									"1",
+									cpuCount,
+									workers);
+
+		// combine
+		cmd = arenaCmd + " ; " + reserveSlurmCmd
+		log.Printf("DEBUG. cmd = %s", cmd)
+	}
 	// Create `RUNDIR` in remote and run cmd at `RUNDIR`
 	cmd = fmt.Sprintf("mkdir -p %s && cd %s && %s", TACCDir["TACC_WORKDIR"], TACCDir["TACC_WORKDIR"], cmd)
 	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
