@@ -854,6 +854,26 @@ func (tcloudcli *TcloudCli) XCat(args ...string) bool {
 	return false
 }
 
+// Show K8S Job log
+func (tcloudcli *TcloudCli) XLogK8S(job string, args ...string) bool {
+	if job == "" {
+		log.Println("Error: Job name is blank.")
+	}
+	namespace := tcloudcli.userConfig.UserName
+	cmd := fmt.Sprintf("arena logs %s -n %s", job, namespace )
+	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
+		log.Println("Failed to log kubernetes job %s/%s", namespace, job)
+		return true
+	}
+	return false
+}
+
+
+
+
+
+
+
 func (tcloudcli *TcloudCli) CondaCacheCheck(envName string) bool {
 	// Get env list from remote
 	cmd := fmt.Sprintf("ls -ltr %s", filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, ".Miniconda3", "envs"))

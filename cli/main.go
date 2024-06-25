@@ -46,6 +46,7 @@ func newTcloudCommand(cli *tcloudcli.TcloudCli) *cobra.Command {
 	tcloudCmd.AddCommand(cmd.NewLSCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewCatCommand(cli))
 	tcloudCmd.AddCommand(cmd.NewENVLSCommand(cli))
+	tcloudCmd.AddCommand(cmd.NewLogK8SCommand(cli))
 
 	// tcloudCmd.AddCommand(cmd.NewTestCommand(cli))
 
