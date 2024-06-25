@@ -598,12 +598,17 @@ rm -f $temp_script;`,
 	return false
 }
 
-func (tcloudcli *TcloudCli) XPS(job string, args ...string) bool {
+func (tcloudcli *TcloudCli) XPS(job string, showK8SJob bool, args ...string) bool {
 	var cmd string
-	if job == "" {
-		cmd = fmt.Sprintf("%s squeue", tcloudcli.prefix)
+	if showK8SJob == true {
+		namespace := tcloudcli.userConfig.UserName
+		cmd = fmt.Sprintf("arena list -n %s", namespace);
 	} else {
-		cmd = fmt.Sprintf("%s squeue -j %s", tcloudcli.prefix, job)
+		if job == "" {
+			cmd = fmt.Sprintf("%s squeue", tcloudcli.prefix)
+		} else {
+			cmd = fmt.Sprintf("%s squeue -j %s", tcloudcli.prefix, job)
+		}
 	}
 	if err := tcloudcli.RemoteExecCmd(cmd); err == true {
 		log.Println("Failed to run cmd in tcloud ps")
