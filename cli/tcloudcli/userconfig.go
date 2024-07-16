@@ -28,15 +28,8 @@ func NewUserConfig(path string) *UserConfig {
 	}
 	decoder := json.NewDecoder(file)
 	if err = decoder.Decode(&config); err != nil {
+		// decode local config file failed, using default value instead
 		return &UserConfig{SSHpath: []string{DEFAULT_SSHPATH}, AuthFile: filepath.Join(os.Getenv("HOME"), DEFAULT_AUTHFILE), Port: DEFAULT_PORT, path: path}
 	}
-
-	// Set default value
-	config.SSHpath = []string{DEFAULT_SSHPATH}
-	if config.AuthFile == "" {
-		config.AuthFile = filepath.Join(os.Getenv("HOME"), DEFAULT_AUTHFILE)
-	}
-	config.Port = DEFAULT_PORT
-	config.path = path
 	return &config
 }
