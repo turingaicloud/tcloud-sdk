@@ -239,7 +239,7 @@ func (tcloudcli *TcloudCli) UploadToUserDir(iscover bool, src string, dstDir str
 	return dst, false
 }
 
-func (tcloudcli *TcloudCli) UploadToWorkerDir(dirName string, src string) (string, bool) {
+func (tcloudcli *TcloudCli) UploadToWorkerDir(src string) (string, bool) {
 	_, err := os.Stat(src)
 	if err != nil {
 		log.Printf("Failed to send to cluster. %s not exists.\n", src)
@@ -296,9 +296,9 @@ func (tcloudcli *TcloudCli) RecvFromCluster(src string, dst string, IsDir bool) 
 	return false
 }
 
-func (tcloudcli *TcloudCli) BuildEnv(submitEnv *TACCGlobalEnv, args ...string) map[string]string {
+func (tcloudcli *TcloudCli) BuildEnv(k8s bool, submitEnv *TACCGlobalEnv, args ...string) map[string]string {
 	var config TuxivConfig
-	localWorkDir, repoName, TACCDir, datasets, err := config.ParseTuxivConf(tcloudcli, submitEnv, args)
+	localWorkDir, repoName, TACCDir, datasets, err := config.ParseTuxivConf(tcloudcli, k8s, submitEnv, args)
 	randString := RandString(16)
 	if err == true {
 		log.Println("Failed to parse tuxiv.conf")
@@ -329,28 +329,30 @@ func (tcloudcli *TcloudCli) BuildEnv(submitEnv *TACCGlobalEnv, args ...string) m
 		os.Exit(-1)
 	}
 	// Generate env name and check if hit the cache, if so, return, otherwise, create new env.
-	if tcloudcli.CondaCacheCheck(envName) {
-		homeDir := filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName)
-		condaBin := filepath.Join(homeDir, tcloudcli.clusterConfig.Conda)
-		condaYaml := filepath.Join(homeDir, tcloudcli.clusterConfig.Dirs["workdir"], repoName, "configurations", "conda.yaml")
-		cmd := fmt.Sprintf("%s %s env update -f %s -n %s\n", tcloudcli.prefix, condaBin, condaYaml, envName)
-		if err := tcloudcli.RemoteExecCmd(cmd); err == true {
-			log.Printf("Failed to update %s\n", envName)
-			os.Exit(-1)
+	if k8s == false{
+		if tcloudcli.CondaCacheCheck(envName) {
+			homeDir := filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName)
+			condaBin := filepath.Join(homeDir, tcloudcli.clusterConfig.Conda)
+			condaYaml := filepath.Join(homeDir, tcloudcli.clusterConfig.Dirs["workdir"], repoName, "configurations", "conda.yaml")
+			cmd := fmt.Sprintf("%s %s env update -f %s -n %s\n", tcloudcli.prefix, condaBin, condaYaml, envName)
+			if err := tcloudcli.RemoteExecCmd(cmd); err == true {
+				log.Printf("Failed to update %s\n", envName)
+				os.Exit(-1)
+				return TACCDir
+			}
+			fmt.Printf("Env %s exists, dependencies updated.\n", envName)
 			return TACCDir
 		}
-		fmt.Printf("Env %s exists, dependencies updated.\n", envName)
-		return TACCDir
-	}
-	if err = tcloudcli.CondaCreate(repoName, envName, randString); err == true {
-		log.Println("Failed to create conda env")
-		os.Exit(-1)
+		if err = tcloudcli.CondaCreate(repoName, envName, randString); err == true {
+			log.Println("Failed to create conda env")
+			os.Exit(-1)
+		}
 	}
 	return TACCDir
 }
 
 func (tcloudcli *TcloudCli) UploadRepo(repoName string, localWorkDir string) bool {
-	dst, err := tcloudcli.UploadToWorkerDir(repoName, localWorkDir)
+	dst, err := tcloudcli.UploadToWorkerDir(localWorkDir)
 	if err == true {
 		log.Println("Failed to upload repo to ", dst)
 		return true
@@ -487,7 +489,7 @@ func (tcloudcli *TcloudCli) XSubmit(k8s bool, args ...string) bool {
 		return true
 	}
 
-	TACCDir := tcloudcli.BuildEnv(submitEnv, args...)
+	TACCDir := tcloudcli.BuildEnv(k8s, submitEnv, args...)
 	if k8s == false{
 		cmd = fmt.Sprintf("%s sbatch %s", tcloudcli.prefix, filepath.Join(submitEnv.RemoteWorkDir, "configurations", "run.slurm"))
 	} else{
@@ -503,12 +505,12 @@ func (tcloudcli *TcloudCli) XSubmit(k8s bool, args ...string) bool {
 			log.Println("Failed to parse TuxivConfig or render config files")
 			return true
 		}
-		//image := "python:3.12" // hardcode for now
-		image := "release-ci.daocloud.io/baize/baize-notebook:v0.6-dev-e388509b" // "m.daocloud.io/nvcr.io/nvidia/pytorch:24.02-py3"
-		hostPathVolume :=  filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName) // like "/mnt/home/peterpan"
-		workingDir := hostPathVolume
-		pathToMountInContainer := hostPathVolume
-		entryCmd := fmt.Sprintf("bash %s", filepath.Join(submitEnv.RemoteWorkDir, "run.sh"))
+		image := "docker.m.daocloud.io/python:3.12.4" // hardcode for now
+		//hostPathVolume :=  filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName) // like "/mnt/home/peterpan"
+
+		workingDir :=  filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"])
+		pathToMountInContainer := workingDir
+
 		randName := "pytorch-" + tcloudcli.randomName(6)
 		gpuParam := "--gpus="   + gpuCount
 		cpuParam := "--cpu="    + cpuCount
@@ -522,48 +524,70 @@ func (tcloudcli *TcloudCli) XSubmit(k8s bool, args ...string) bool {
 		if memory == "" {
 			memParam = ""
 		}
-		arenaCmd := fmt.Sprintf("arena submit pytorch --namespace=%s --name=%s  --workers=%s --working-dir=%s --image=%s --data-dir=%s:%s  %s %s %s --logdir=%s %s || exit -1",
+		strlist, TACCDir := config.TACCJobEnv(submitEnv.RemoteWorkDir, submitEnv.RemoteUserDir)
+		envList  := ""
+		for _, s := range strlist {
+			envList = envList + fmt.Sprintf("--env=%s ", s) // TACC_WORKDIR=xxxx
+		}
+		TACC_WORKDIR := TACCDir["TACC_WORKDIR"]
+		entryCmd := fmt.Sprintf("bash %s", filepath.Join(TACC_WORKDIR, "run.sh"))
+		arenaCmd := fmt.Sprintf("arena submit pytorch --namespace=%s --name=%s  --workers=%s --working-dir=%s --image=%s --data-dir=%s:%s  %s %s %s %s --logdir=%s %s || exit -1",
 						namespace,
 						randName,
 						workers,
 						workingDir,
 						image,
-						hostPathVolume,
+						workingDir,
 						pathToMountInContainer,
 						cpuParam,
 						memParam,
 						gpuParam,
+						envList,
 						outputDir,
 						entryCmd)
 
 		// get the node allocated the k8s job, then using salloc command to reserve the node resource and release when arena job completd.
+		slurmCPU := cpuCount
+		if cpuCount == "" {
+			slurmCPU = "1"
+		}
+
 		reserveSlurmCmd := fmt.Sprintf(`
-set -x;
 export NS=%s;
 export Job=%s;
 #kubectl  --namespace $NS  wait pytorchjob $Job --for condition=Running --timeout=-1s;
+N=""
 while true; do
 	status=$(kubectl --namespace  $NS get pytorchjob $Job -o jsonpath='{.status.conditions[-1].type}')
 	if [ "$status" == "Running"  ]; then
-		break
+		N=$(arena get $Job --namespace $NS  -o  json| jq '.instances[].node' | jq -s 'join(",")');
+		if [[ $N =~ "N/A"  ]]; then
+			continue; # worker not running yeah
+		else
+			break;
+		fi
 	elif [ "$status" == "Failed"  ]; then
 	    exit 0 
 	fi
-	sleep 5
+	echo Waiting job $Job to be ready ... status=$status
+	kubectl -n $NS get po   -o wide |grep $Job
+	echo ----------------------------------------
+	sleep 10
 done
 if [ "$status" == "Failed" ];then
       echo "Job $NS/$Job Failed, just exit.."
       exit 0
 fi
+echo "Job running..."
 
-N=$(arena get $Job --namespace $NS  -o  json| jq '.instances[].node');
 temp_script=$(mktemp);
 cat << EOF > $temp_script
 #!/bin/bash
-#SBATCH --nodes=%s
 #SBATCH --ntasks-per-node=%s
 #SBATCH --cpus-per-task=%s
-echo "waiting Job $Job completed"
+#SBATCH --nodes=%s
+echo "waiting Job $Job to complete..."
+set -x
 while true; do
 	status=\$(kubectl --namespace  $NS get pytorchjob $Job -o jsonpath='{.status.conditions[-1].type}')
 	if [ "\$status" == "Succeeded"  ]; then
@@ -571,22 +595,24 @@ while true; do
 	elif [ "\$status" == "Failed"  ]; then
    	    break
 	fi
+	echo "job current status = " \$status
 	sleep 5
 done
-echo "job final status = " $$status
+echo "job final status = " \$status
 EOF
-echo "reserve equvalant equivalent resources for slurm on node $N.."
-sbatch --nodelist=$N $temp_script;
+# NOTE: in EOF block, shell var should be decode
+echo "Now reserve equvalant resources for slurm, on node $N.."
+set -x
+bash -c "sbatch --nodelist=${N} $temp_script" &&
 rm -f $temp_script;`,
 									namespace,
 									randName,
 									"1",
-									cpuCount,
+									slurmCPU,
 									workers);
 
 		// combine
 		cmd = arenaCmd + " ; " + reserveSlurmCmd
-		log.Printf("DEBUG. cmd = %s", cmd)
 	}
 	// Create `RUNDIR` in remote and run cmd at `RUNDIR`
 	cmd = fmt.Sprintf("mkdir -p %s && cd %s && %s", TACCDir["TACC_WORKDIR"], TACCDir["TACC_WORKDIR"], cmd)
@@ -649,7 +675,7 @@ func (tcloudcli *TcloudCli) XAdd(args ...string) bool {
 func (tcloudcli *TcloudCli) XInstall(args ...string) bool {
 	var config TuxivConfig
 	var submitEnv *TACCGlobalEnv
-	_, _, _, _, err := config.ParseTuxivConf(tcloudcli, submitEnv, args)
+	_, _, _, _, err := config.ParseTuxivConf(tcloudcli, false, submitEnv, args)
 	if err == true {
 		log.Println("Failed to parse tuxiv.conf")
 		os.Exit(-1)
@@ -876,7 +902,8 @@ func (tcloudcli *TcloudCli) XLogK8S(job string, args ...string) bool {
 
 func (tcloudcli *TcloudCli) CondaCacheCheck(envName string) bool {
 	// Get env list from remote
-	cmd := fmt.Sprintf("ls -ltr %s", filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, ".Miniconda3", "envs"))
+	condaRootDir := filepath.Dir(tcloudcli.clusterConfig.Conda + "../../../") // conda bin lives xxxx/bin/conda; conda envs lives xxxx/envs
+	cmd := fmt.Sprintf("ls -ltr %s", filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, condaRootDir, "envs"))
 	var envList []string
 	if out, err := tcloudcli.RemoteExecCmdOutput(cmd); err == true {
 		log.Println("Failed to get env list")

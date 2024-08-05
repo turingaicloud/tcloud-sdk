@@ -51,7 +51,8 @@ func (config *TuxivConfig) TACCJobEnv(remoteWorkDir string, remoteUserDir string
 }
 // Retrieve the slurm job arguments from tuxiv.conf, so that we can specific those param to k8s job
 func (config *TuxivConfig) ParseTuxivConfigforK8s(tcloudcli *TcloudCli, submitEnv *TACCGlobalEnv)(string,string,string,string,string,string, error){
-	_, renderSts := config.renderConfigByTuxivConf(tcloudcli, submitEnv)
+	k8s := true;
+	_, renderSts := config.renderConfigByTuxivConf(tcloudcli, k8s, submitEnv)
 	if renderSts {
 		return "","","","","","", fmt.Errorf("Failed to render other configuration files.....")
 	}
@@ -83,7 +84,7 @@ func (config *TuxivConfig) ParseTuxivConfigforK8s(tcloudcli *TcloudCli, submitEn
 
 
 // sub-function
-func (config *TuxivConfig) renderConfigByTuxivConf(tcloudcli *TcloudCli, submitEnv *TACCGlobalEnv) (map[string]string, bool) {
+func (config *TuxivConfig) renderConfigByTuxivConf(tcloudcli *TcloudCli, skipConda bool, submitEnv *TACCGlobalEnv) (map[string]string, bool) {
 	TACCDir := make(map[string]string)
 	LocalTuxivFile := filepath.Join(submitEnv.LocalWorkDir, tuxivFile)
 	yamlFile, err := ioutil.ReadFile(LocalTuxivFile)
@@ -115,14 +116,14 @@ func (config *TuxivConfig) renderConfigByTuxivConf(tcloudcli *TcloudCli, submitE
 		log.Println("Failed to generate Datasets config file")
 		return TACCDir, true
 	}
-	//log.Println("rendering run.sh")
-	if err := config.RunshFile(tcloudcli, submitEnv); err == true {
+	log.Println("rendering run.sh")
+	if err := config.RunshFile(skipConda, tcloudcli, submitEnv); err == true {
 		return TACCDir, true
 	}
 	return TACCDir, false
 }
 
-func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, submitEnv *TACCGlobalEnv, args []string) (string, string, map[string]string, []string, bool) {
+func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, k8s bool, submitEnv *TACCGlobalEnv, args []string) (string, string, map[string]string, []string, bool) {
 	if len(args) < 1 {
 		submitEnv.LocalWorkDir, _ = filepath.Abs(path.Dir("."))
 		if err := config.DirSizeCheck(submitEnv.LocalWorkDir, tcloudcli); err == true {
@@ -146,7 +147,7 @@ func (config *TuxivConfig) ParseTuxivConf(tcloudcli *TcloudCli, submitEnv *TACCG
 		submitEnv.RemoteWorkDir = filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["workdir"], submitEnv.RepoName)
 		submitEnv.RemoteUserDir = filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName, tcloudcli.clusterConfig.Dirs["userdir"])
 	}
-	TACCDir, renderSts := config.renderConfigByTuxivConf(tcloudcli, submitEnv)
+	TACCDir, renderSts := config.renderConfigByTuxivConf(tcloudcli, k8s, submitEnv)
 	return submitEnv.LocalWorkDir, submitEnv.RepoName, TACCDir, config.Datasets, renderSts
 }
 
@@ -259,7 +260,7 @@ func (config *TuxivConfig) CityFile(submitEnv *TACCGlobalEnv) bool {
 	return false
 }
 
-func (config *TuxivConfig) RunshFile(tcloudcli *TcloudCli, submitEnv *TACCGlobalEnv) bool {
+func (config *TuxivConfig) RunshFile(skipConda bool, tcloudcli *TcloudCli, submitEnv *TACCGlobalEnv) bool {
 	localWorkDir := submitEnv.LocalWorkDir
 	localRunshFile := filepath.Join(localWorkDir, RunshFile)
 	f, err := os.Create(localRunshFile)
@@ -270,20 +271,24 @@ func (config *TuxivConfig) RunshFile(tcloudcli *TcloudCli, submitEnv *TACCGlobal
 	defer f.Close()
 
 	w := bufio.NewWriter(f)
+	var str string;
 	homeDir := filepath.Join(tcloudcli.clusterConfig.HomeDir, tcloudcli.userConfig.UserName)
-	str := fmt.Sprintf("#!/bin/bash\nsource %s/%s", homeDir, CONDA_SHELL_PATH)
-	fmt.Fprintln(w, str)
+	if skipConda == false{
+		str = fmt.Sprintf("#!/bin/bash\nsource %s/%s", homeDir, CONDA_SHELL_PATH)
+		fmt.Fprintln(w, str)
 
-	var EnvName string
-	if config.Environment.Name == "" {
-		hashString := config.EnvNameGenerator()
-		// fmt.Fprintln(w, fmt.Sprintf("name: %s", config.Environment.Name + "-" + hashString))
-		EnvName = hashString
-	} else {
-		EnvName = config.Environment.Name
+		var EnvName string
+		if config.Environment.Name == "" {
+			hashString := config.EnvNameGenerator()
+			// fmt.Fprintln(w, fmt.Sprintf("name: %s", config.Environment.Name + "-" + hashString))
+			EnvName = hashString
+		} else {
+			EnvName = config.Environment.Name
+		}
+		str = fmt.Sprintf("conda activate %s\n", EnvName)
+		fmt.Fprintln(w, str)
+
 	}
-	str = fmt.Sprintf("conda activate %s\n", EnvName)
-	fmt.Fprintln(w, str)
 
 	for _, s := range config.Entrypoint {
 		str = fmt.Sprintf("%s \\", s)
