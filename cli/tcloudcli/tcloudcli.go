@@ -586,6 +586,8 @@ cat << EOF > $temp_script
 #SBATCH --ntasks-per-node=%s
 #SBATCH --cpus-per-task=%s
 #SBATCH --nodes=%s
+#SBATCH --output=/home/${NS}/USERDIR/slurm_log/place-holder-${Job}.log
+#SBATCH --error=/home/${NS}/USERDIR/slurm_log/place-holder-${Job}.log
 echo "waiting Job $Job to complete..."
 set -x
 while true; do
