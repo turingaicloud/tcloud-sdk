@@ -12,7 +12,7 @@ build : ${ARTIFACTS}
 
 ${ARTIFACTS} : main.go
 		mkdir -p bin
-		go build -i -o bin/tcloud tcloud-sdk/cli
+		go build -o bin/tcloud tcloud-sdk/cli
 
 ${INSTALL_BIN} : ${ARTIFACTS}
 
